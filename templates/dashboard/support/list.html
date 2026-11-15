@@ -1,0 +1,36 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Support tickets{% endblock %}
+{% block content %}
+<div class="page-title"><div><h1>Support tickets</h1><p>Customer enquiries from the contact form and account area.</p></div><a href="?mine=1" class="btn btn-d-light"><i class="bi bi-person-check me-1"></i>Assigned to me</a></div>
+<div class="status-tabs">
+  <a href="{% url 'dashboard:ticket_list' %}" class="{% if not request.GET.status %}active{% endif %}">All</a>
+  {% for val, label in status_choices %}<a href="?status={{ val }}" class="{% if request.GET.status == val %}active{% endif %}">{{ label }}<span class="n">{{ counts|get_item:val|default:0 }}</span></a>{% endfor %}
+</div>
+<div class="d-card">
+  <div class="d-card-head">
+    <form class="filter-bar" method="get">
+      {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+      <input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="Ticket no., subject or email…">
+      <select name="priority" class="form-select" onchange="this.form.submit()"><option value="">Any priority</option>{% for v, l in priority_choices %}<option value="{{ v }}" {% if request.GET.priority == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <button class="btn btn-d-light"><i class="bi bi-funnel"></i></button>
+    </form>
+  </div>
+  <div class="table-responsive"><table class="table table-d">
+    <thead><tr><th>Ticket</th><th>Subject</th><th>Customer</th><th>Priority</th><th>Assigned</th><th>Updated</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for t in page_obj %}
+      <tr>
+        <td><a href="{% url 'dashboard:ticket_detail' t.pk %}" class="fw-medium">{{ t.ticket_number }}</a></td>
+        <td>{{ t.subject|truncatechars:50 }}<div class="small text-muted">{{ t.get_category_display }}{% if t.order %} · {{ t.order.order_number }}{% endif %}</div></td>
+        <td class="small">{{ t.name }}<div class="text-muted">{{ t.email }}</div></td>
+        <td>{% if t.priority == "high" %}<span class="badge badge-soft-danger">High</span>{% elif t.priority == "low" %}<span class="badge badge-soft-light">Low</span>{% else %}<span class="badge badge-soft-info">Normal</span>{% endif %}</td>
+        <td class="small">{{ t.assigned_to.full_name|default:"—" }}</td>
+        <td class="small">{{ t.updated_at|timesince }} ago</td>
+        <td>{% status_badge t.status t.get_status_display %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="7"><div class="empty-d"><i class="bi bi-headset"></i>No tickets.</div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  {% include "dashboard/_pagination.html" %}
+</div>
+{% endblock %}

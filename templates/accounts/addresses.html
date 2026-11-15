@@ -1,0 +1,25 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}Addresses | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<div class="d-flex justify-content-between align-items-center mb-4"><h1 class="h2 mb-0">Saved addresses</h1><a href="{% url 'accounts:address_create' %}" class="btn btn-cozy btn-sm"><i class="bi bi-plus"></i> Add address</a></div>
+<div class="row g-3">
+  {% for a in addresses %}
+  <div class="col-md-6">
+    <div class="address-card {% if a.is_default %}default{% endif %}">
+      <div class="d-flex justify-content-between align-items-start">
+        <strong>{{ a.full_name }}</strong>
+        <span>{% if a.is_default %}<span class="badge badge-soft-primary">Default</span>{% endif %} <span class="badge badge-soft-light">{{ a.get_address_type_display }}</span></span>
+      </div>
+      <p class="small text-muted my-2">{{ a.one_line }}<br>{{ a.country }}<br><i class="bi bi-telephone"></i> {{ a.phone }}</p>
+      <div class="d-flex gap-3 small">
+        <a href="{% url 'accounts:address_edit' a.id %}">Edit</a>
+        {% if not a.is_default %}<form method="post" action="{% url 'accounts:address_default' a.id %}">{% csrf_token %}<button class="btn btn-link p-0 small">Set as default</button></form>{% endif %}
+        <form method="post" action="{% url 'accounts:address_delete' a.id %}" data-confirm="Delete this address?">{% csrf_token %}<button class="btn btn-link p-0 small text-danger">Delete</button></form>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="empty-state"><i class="bi bi-geo-alt"></i><p class="text-muted mt-2">No saved addresses yet.</p><a href="{% url 'accounts:address_create' %}" class="btn btn-cozy">Add your first address</a></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

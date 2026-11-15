@@ -1,0 +1,38 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_tags %}
+{% block title %}{{ ticket.ticket_number }}{% endblock %}
+{% block content %}
+<div class="page-title"><div><a href="{% url 'dashboard:ticket_list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> Tickets</a><h1>{{ ticket.subject }}</h1><p>{{ ticket.ticket_number }} · {{ ticket.get_category_display }} · opened {{ ticket.created_at|date:"d M Y, h:i A" }} · {% status_badge ticket.status ticket.get_status_display %}</p></div></div>
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="d-card"><div class="d-card-body">
+      {% for m in ticket_messages %}
+      <div class="msg-bubble {% if m.is_staff_reply %}staff{% else %}customer{% endif %}">
+        <div class="small fw-medium mb-1">{% if m.is_staff_reply %}{{ m.sender.full_name|default:"Staff" }} (staff){% else %}{{ ticket.name }}{% endif %} <span class="text-muted fw-normal">· {{ m.created_at|date:"d M, h:i A" }}</span></div>
+        {{ m.message|linebreaksbr }}
+      </div>
+      {% endfor %}
+      <form method="post" class="mt-3" novalidate>
+        {% csrf_token %}
+        {% include "base/_field.html" with field=reply_form.message %}
+        <button class="btn btn-d" name="reply" value="1"><i class="bi bi-send me-1"></i>Send reply</button>
+        <span class="small text-muted ms-2">The customer is notified by email.</span>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-xl-4">
+    <div class="d-card mb-3"><div class="d-card-head"><h5>Ticket settings</h5></div><div class="d-card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in update_form %}{% include "base/_field.html" %}{% endfor %}
+        <button class="btn btn-d-light w-100" name="update" value="1">Update ticket</button>
+      </form>
+    </div></div>
+    <div class="d-card"><div class="d-card-head"><h5>Customer</h5></div><div class="d-card-body small">
+      <strong>{{ ticket.name }}</strong><br>{{ ticket.email }}<br>{{ ticket.phone }}
+      {% if ticket.user and request.user|can:"customers.view" %}<br><a href="{% url 'dashboard:customer_detail' ticket.user_id %}">View customer profile</a>{% endif %}
+      {% if ticket.order and request.user|can:"orders.view" %}<hr><a href="{% url 'dashboard:order_detail' ticket.order.order_number %}">Order {{ ticket.order.order_number }}</a> · {{ ticket.order.get_status_display }}{% endif %}
+    </div></div>
+  </div>
+</div>
+{% endblock %}

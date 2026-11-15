@@ -1,0 +1,23 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}Notifications | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h2 mb-0">Notifications</h1>
+  <form method="post" action="{% url 'notifications:mark_all_read' %}">{% csrf_token %}<button class="btn btn-light-cozy btn-sm">Mark all as read</button></form>
+</div>
+<div class="card-cozy p-0">
+  {% for n in notifications %}
+  <a href="{% url 'notifications:open' n.id %}" class="d-flex gap-3 p-3 border-bottom text-reset {% if not n.is_read %}bg-ivory{% endif %}">
+    <span class="stat-tile p-0 border-0 bg-transparent"><span class="ico"><i class="bi {{ n.icon }}"></i></span></span>
+    <div class="flex-grow-1">
+      <div class="d-flex justify-content-between gap-2"><strong class="small">{{ n.title }}</strong><small class="text-muted text-nowrap">{{ n.created_at|timesince }} ago</small></div>
+      <div class="small text-muted">{{ n.message }}</div>
+    </div>
+    {% if not n.is_read %}<span class="badge-count position-static" style="min-width:10px;height:10px"></span>{% endif %}
+  </a>
+  {% empty %}
+  <div class="empty-state"><i class="bi bi-bell"></i><p class="text-muted mt-2 mb-0">You're all caught up.</p></div>
+  {% endfor %}
+</div>
+{% include "base/_pagination.html" %}
+{% endblock %}

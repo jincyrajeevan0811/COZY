@@ -1,0 +1,211 @@
+{% extends "base/base.html" %}
+{% block title %}{{ product.meta_title|default:product.name }} | {{ site.site_name }}{% endblock %}
+{% block meta_description %}{{ product.meta_description|default:product.short_description|default:product.description|striptags|truncatechars:155 }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.name }}{% endblock %}
+{% block og_description %}{{ product.short_description|default:product.description|striptags|truncatechars:155 }}{% endblock %}
+{% block og_image %}{% with img=product.primary_image %}{% if img %}<meta property="og:image" content="{{ SITE_URL }}{{ img.image.url }}">{% endif %}{% endwith %}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": "{{ product.name|escapejs }}",
+  "sku": "{{ product.sku|escapejs }}",
+  "description": "{{ product.short_description|default:product.description|striptags|truncatechars:300|escapejs }}",
+  {% with img=product.primary_image %}{% if img %}"image": ["{{ SITE_URL }}{{ img.image.url }}"],{% endif %}{% endwith %}
+  "brand": {"@type": "Brand", "name": "{{ site.site_name|escapejs }}"},
+  "category": "{{ product.category.name|escapejs }}",
+  {% if product.review_count %}"aggregateRating": {"@type": "AggregateRating", "ratingValue": "{{ product.avg_rating }}", "reviewCount": "{{ product.review_count }}"},{% endif %}
+  "offers": {
+    "@type": "Offer",
+    "url": "{{ SITE_URL }}{{ product.get_absolute_url }}",
+    "priceCurrency": "INR",
+    "price": "{{ product.price }}",
+    "availability": "https://schema.org/{% if product.in_stock %}InStock{% else %}OutOfStock{% endif %}",
+    "itemCondition": "https://schema.org/NewCondition"
+  }
+}
+</script>
+{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb"><ol class="breadcrumb justify-content-start">
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item"><a href="{{ product.category.get_absolute_url }}">{{ product.category.name }}</a></li>
+    {% if product.subcategory %}<li class="breadcrumb-item"><a href="{{ product.subcategory.get_absolute_url }}">{{ product.subcategory.name }}</a></li>{% endif %}
+    <li class="breadcrumb-item active">{{ product.name }}</li>
+  </ol></nav>
+</div>
+
+<div class="container pb-5" data-product-scope>
+  <div class="row g-5">
+    <div class="col-lg-7">
+      <div class="pd-gallery">
+        <div class="pd-thumbs">
+          {% for img in images %}
+          <button type="button" class="{% if forloop.first %}active{% endif %}" data-full="{{ img.image.url }}" aria-label="View image {{ forloop.counter }}"><img src="{{ img.image.url }}" alt="{{ img.alt_text }}" loading="lazy"></button>
+          {% endfor %}
+        </div>
+        <div class="pd-main">
+          {% with img=product.primary_image %}
+          {% if img %}<img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}">{% else %}<div class="h-100 d-flex align-items-center justify-content-center bg-champagne"><i class="bi bi-gem display-1 text-rose"></i></div>{% endif %}
+          {% endwith %}
+          <div class="pc-badges">
+            {% if product.discount_percent %}<span class="pc-badge sale">-{{ product.discount_percent }}%</span>{% endif %}
+            {% if product.is_new_arrival %}<span class="pc-badge new">New</span>{% endif %}
+            {% if product.is_bestseller %}<span class="pc-badge best">Bestseller</span>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="pd-info">
+        <span class="eyebrow">{{ product.category.name }}{% if product.style %} · {{ product.style.value }}{% endif %}</span>
+        <h1>{{ product.name }}</h1>
+        <div class="d-flex align-items-center gap-3 mb-3 pd-meta">
+          {% if product.review_count %}<a href="#reviews" class="text-reset">{{ product.avg_rating|stars }} {{ product.avg_rating|floatformat:1 }} ({{ product.review_count }} review{{ product.review_count|pluralize }})</a>{% else %}<span>No reviews yet</span>{% endif %}
+          <span>SKU: <span class="js-sku">{{ product.sku }}</span></span>
+        </div>
+        <div class="d-flex align-items-baseline gap-3 mb-1">
+          <span class="pd-price js-price">{{ product.price|inr:"auto" }}</span>
+          <span class="mrp fs-5 js-mrp">{% if product.discount_percent %}{{ product.original_price|inr:"auto" }}{% endif %}</span>
+          {% if product.discount_percent %}<span class="badge badge-soft-primary">Save {{ product.discount_percent }}%</span>{% endif %}
+        </div>
+        <p class="small text-muted mb-3">{% if site.prices_include_tax %}Inclusive of all taxes{% else %}+ GST at checkout{% endif %}</p>
+        {% if product.short_description %}<p class="mb-4">{{ product.short_description }}</p>{% endif %}
+
+        {% with stock=product.stock_quantity %}
+        <div class="mb-3">
+          {% if product.has_variants %}<span class="stock-pill js-stock in"><i class="bi bi-info-circle"></i> Select an option</span>
+          {% elif stock <= 0 %}<span class="stock-pill js-stock out"><i class="bi bi-x-circle"></i> Out of stock</span>
+          {% elif stock <= 5 %}<span class="stock-pill js-stock low"><i class="bi bi-hourglass-split"></i> Only {{ stock }} left</span>
+          {% else %}<span class="stock-pill js-stock in"><i class="bi bi-check-circle"></i> In stock</span>{% endif %}
+        </div>
+
+        <form class="js-add-to-cart" method="post" action="{% url 'cart:add' %}" {% if product.has_variants %}data-variants="{{ variants_json }}" data-requires-variant="1"{% endif %}>
+          {% csrf_token %}
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+          <input type="hidden" name="variant_id" value="">
+          {% if variants %}
+          <div class="mb-4">
+            <label class="form-label">Choose option</label>
+            <div class="variant-options">
+              {% for v in variants %}
+              <input type="radio" name="variant_choice" id="v{{ v.id }}" value="{{ v.id }}" {% if v.stock <= 0 %}disabled{% endif %}>
+              <label for="v{{ v.id }}">{{ v.name }}</label>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+            <div class="qty-input">
+              <button type="button" data-qty="-" aria-label="Decrease quantity">−</button>
+              <input type="number" name="quantity" value="1" min="1" max="{% if stock < 10 and not product.has_variants %}{{ stock|default:1 }}{% else %}10{% endif %}" aria-label="Quantity">
+              <button type="button" data-qty="+" aria-label="Increase quantity">+</button>
+            </div>
+            <button type="submit" class="btn btn-cozy flex-grow-1" {% if stock <= 0 and not product.has_variants %}disabled{% endif %}><i class="bi bi-bag-plus me-2"></i>Add to bag</button>
+            <button type="button" class="btn btn-light-cozy js-wishlist {% if in_wishlist %}active{% endif %}" data-url="{% url 'wishlist:toggle' product.id %}" aria-label="Wishlist"><i class="bi {% if in_wishlist %}bi-heart-fill text-rose{% else %}bi-heart{% endif %}"></i></button>
+          </div>
+          <button type="submit" name="buy_now" value="1" class="btn btn-rose w-100 mb-4" {% if stock <= 0 and not product.has_variants %}disabled{% endif %}>Buy it now</button>
+        </form>
+        {% endwith %}
+
+        <div class="card-cozy mb-3">
+          <label class="form-label mb-2"><i class="bi bi-geo-alt me-1"></i>Check delivery</label>
+          <form class="js-pincode-form input-group" action="{% url 'shipping:pincode_check' %}">
+            <input type="text" class="form-control" placeholder="Enter PIN code" maxlength="6" inputmode="numeric" value="{{ request.session.pincode|default:'' }}" aria-label="PIN code">
+            <button class="btn btn-cozy" type="submit">Check</button>
+          </form>
+          <div class="pincode-result text-muted">Estimated delivery: {{ delivery_estimate.start|date:"D, d M" }} – {{ delivery_estimate.end|date:"D, d M" }}</div>
+        </div>
+
+        <ul class="info-list">
+          <li><i class="bi bi-truck"></i><span>Free shipping on orders above {{ site_settings.free_shipping_threshold|inr:"auto" }}</span></li>
+          <li><i class="bi bi-arrow-repeat"></i><span>{% if product.is_returnable %}{{ product.return_days }}-day easy returns. {{ site_settings.return_policy_summary }}{% else %}This item is not eligible for return.{% endif %}</span></li>
+          {% if site_settings.cod_enabled %}<li><i class="bi bi-cash-coin"></i><span>Cash on Delivery available</span></li>{% endif %}
+          <li><i class="bi bi-gift"></i><span>Gift wrapping available at checkout</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-5">
+    <ul class="nav pd-tabs border-bottom" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-desc" type="button" role="tab">Description</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-spec" type="button" role="tab">Details</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-care" type="button" role="tab">Care & returns</button></li>
+    </ul>
+    <div class="tab-content py-4">
+      <div class="tab-pane fade show active prose" id="tab-desc" role="tabpanel">{{ product.description|linebreaks }}</div>
+      <div class="tab-pane fade" id="tab-spec" role="tabpanel">
+        <table class="spec-table w-100" style="max-width:560px">
+          <tr><td>SKU</td><td>{{ product.sku }}</td></tr>
+          <tr><td>Category</td><td>{{ product.category.name }}{% if product.subcategory %} › {{ product.subcategory.name }}{% endif %}</td></tr>
+          {% if product.material %}<tr><td>Material</td><td>{{ product.material.value }}</td></tr>{% endif %}
+          {% if product.color %}<tr><td>Colour / finish</td><td>{{ product.color.value }}</td></tr>{% endif %}
+          {% if product.style %}<tr><td>Style</td><td>{{ product.style.value }}</td></tr>{% endif %}
+          {% if product.size_info %}<tr><td>Size</td><td>{{ product.size_info }}</td></tr>{% endif %}
+          {% if product.weight_grams %}<tr><td>Weight</td><td>{{ product.weight_grams|floatformat:"-1" }} g</td></tr>{% endif %}
+        </table>
+      </div>
+      <div class="tab-pane fade prose" id="tab-care" role="tabpanel">
+        {% if product.care_instructions %}{{ product.care_instructions|linebreaks }}{% else %}<p>Keep away from water, perfume and moisture. Store in the COZY pouch, separately from other jewellery, to protect the finish.</p>{% endif %}
+        <p class="mb-0">{% if product.is_returnable %}Returns accepted within {{ product.return_days }} days of delivery for unused items in original packaging.{% else %}This product cannot be returned for hygiene reasons.{% endif %}</p>
+      </div>
+    </div>
+  </div>
+
+  <section id="reviews" class="mt-4">
+    <div class="row g-5">
+      <div class="col-lg-4">
+        <h2 class="h3">Customer reviews</h2>
+        <div class="rating-summary d-flex align-items-center gap-3 my-3">
+          <span class="big">{{ product.avg_rating|floatformat:1 }}</span>
+          <div>{{ product.avg_rating|stars }}<div class="small text-muted">Based on {{ product.review_count }} review{{ product.review_count|pluralize }}</div></div>
+        </div>
+        {% for star, count in rating_breakdown.items %}
+        <div class="d-flex align-items-center gap-2 small mb-1"><span style="width:28px">{{ star }}★</span><div class="rating-bar"><span style="width:{{ count|percent_of:product.review_count }}%"></span></div><span class="text-muted" style="width:24px">{{ count }}</span></div>
+        {% endfor %}
+        <div class="mt-4">
+          {% if user.is_authenticated %}
+            {% if can_review %}<a href="{% url 'reviews:write' product.id %}" class="btn btn-cozy-outline w-100">Write a review</a>
+            {% elif has_reviewed %}<a href="{% url 'reviews:write' product.id %}" class="btn btn-light-cozy w-100">Edit your review</a>{% endif %}
+          {% else %}<a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}%23reviews" class="btn btn-cozy-outline w-100">Sign in to write a review</a>{% endif %}
+        </div>
+      </div>
+      <div class="col-lg-8">
+        {% for r in reviews %}
+        <div class="review-item">
+          <div class="d-flex justify-content-between flex-wrap gap-2">
+            <div>{{ r.rating|stars }} {% if r.title %}<strong class="ms-2">{{ r.title }}</strong>{% endif %}</div>
+            <small class="text-muted">{{ r.created_at|date:"d M Y" }}</small>
+          </div>
+          <p class="my-2">{{ r.comment|linebreaksbr }}</p>
+          {% if r.images.all %}<div class="review-images mb-2">{% for im in r.images.all %}<a href="{{ im.image.url }}" target="_blank" rel="noopener"><img src="{{ im.image.url }}" alt="Customer photo" loading="lazy"></a>{% endfor %}</div>{% endif %}
+          <small class="text-muted">{{ r.user.first_name|default:"Customer" }}</small>{% if r.is_verified_purchase %} <span class="verified"><i class="bi bi-patch-check-fill"></i> Verified purchase</span>{% endif %}
+          {% if r.admin_reply %}<div class="bg-ivory rounded p-3 mt-2 small"><strong>{{ site.site_name }} replied:</strong> {{ r.admin_reply }}</div>{% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-state py-4"><i class="bi bi-chat-heart"></i><p class="mt-2 mb-0 text-muted">Be the first to review this piece.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {% if related_products %}
+  <section class="mt-5 pt-4">
+    <div class="section-head-row"><div><span class="eyebrow">Complete the look</span><h2 class="mb-0">You may also like</h2></div></div>
+    <div class="scroll-row">{% for product in related_products %}{% include "base/_product_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {% if recent_products %}
+  <section class="mt-5 pt-4">
+    <div class="section-head-row"><div><span class="eyebrow">Your history</span><h2 class="mb-0">Recently viewed</h2></div></div>
+    <div class="scroll-row">{% for product in recent_products %}{% include "base/_product_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

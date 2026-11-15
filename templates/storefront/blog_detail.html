@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+{% block title %}{{ post.meta_title|default:post.title }} | {{ site.site_name }}{% endblock %}
+{% block meta_description %}{{ post.meta_description|default:post.excerpt|default:post.content|striptags|truncatechars:155 }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_image %}{% if post.cover_image %}<meta property="og:image" content="{{ SITE_URL }}{{ post.cover_image.url }}">{% endif %}{% endblock %}
+{% block content %}
+<article>
+  <section class="page-hero {% if post.cover_image %}with-image{% endif %}">
+    {% if post.cover_image %}<img src="{{ post.cover_image.url }}" alt="">{% endif %}
+    <div class="container"><span class="eyebrow">{{ post.published_at|date:"d M Y" }}</span><h1>{{ post.title }}</h1></div>
+  </section>
+  <div class="container py-5" style="max-width:800px">
+    <div class="prose">{{ post.content|safe }}</div>
+    {% if post.tags %}<div class="mt-4">{% for t in post.tags|split_tags %}<a class="chip" href="{% url 'site:blog_list' %}?tag={{ t|urlencode }}">#{{ t }}</a>{% endfor %}</div>{% endif %}
+    <div class="mt-4 small">Share: <a href="https://wa.me/?text={{ SITE_URL|urlencode }}{{ post.get_absolute_url|urlencode }}" target="_blank" rel="noopener" class="ms-2"><i class="bi bi-whatsapp"></i></a> <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL|urlencode }}{{ post.get_absolute_url|urlencode }}" target="_blank" rel="noopener" class="ms-2"><i class="bi bi-facebook"></i></a> <a href="https://pinterest.com/pin/create/button/?url={{ SITE_URL|urlencode }}{{ post.get_absolute_url|urlencode }}" target="_blank" rel="noopener" class="ms-2"><i class="bi bi-pinterest"></i></a></div>
+  </div>
+</article>
+{% if recent_posts %}
+<div class="container pb-5">
+  <h2 class="h3 mb-4">More from the journal</h2>
+  <div class="row g-4">{% for p in recent_posts %}<div class="col-md-4"><a href="{{ p.get_absolute_url }}" class="blog-card text-reset"><div class="cover">{% if p.cover_image %}<img src="{{ p.cover_image.url }}" alt="" loading="lazy">{% endif %}</div><div class="p-3"><h3 class="h5 mb-0">{{ p.title }}</h3></div></a></div>{% endfor %}</div>
+</div>
+{% endif %}
+{% endblock %}

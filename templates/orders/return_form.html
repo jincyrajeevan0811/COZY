@@ -1,0 +1,18 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}Return order {{ order.order_number }} | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<a href="{{ order.get_absolute_url }}" class="small text-muted"><i class="bi bi-arrow-left"></i> Back to order</a>
+<h1 class="h2 mt-1 mb-1">Request a return</h1>
+<p class="text-muted">Order {{ order.order_number }} · Return window ends {{ order.return_deadline|date:"d M Y" }}</p>
+<div class="card-cozy">
+  {% for item in order.items.all %}
+  <div class="order-line">{% if item.image_url %}<img src="{{ item.image_url }}" alt="">{% else %}<span class="noimg"></span>{% endif %}<div><div class="fw-medium">{{ item.product_name }}</div><div class="small text-muted">Qty {{ item.quantity }}</div></div></div>
+  {% endfor %}
+</div>
+<form class="card-cozy" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% include "base/_form.html" %}
+  <p class="small text-muted">Items must be unused, with tags and original packaging. Once we receive and inspect the item, your refund will be processed to the original payment method (or bank/UPI for COD orders).</p>
+  <button class="btn btn-cozy">Submit return request</button>
+</form>
+{% endblock %}

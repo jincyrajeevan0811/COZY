@@ -1,0 +1,10 @@
+<div class="track-timeline">
+  {% for step in timeline %}
+  <div class="track-step {% if step.done %}done{% endif %} {% if step.current %}current{% endif %}">
+    <div class="dot"><i class="bi {{ step.icon }}"></i></div>
+    <div><div class="label">{{ step.label }}</div><div class="when">{% if step.at %}{{ step.at|date:"d M, h:i A" }}{% endif %}</div></div>
+  </div>
+  {% endfor %}
+</div>
+{% if order.status == "cancelled" %}<div class="alert alert-light border small mt-3 mb-0"><i class="bi bi-x-circle text-danger me-1"></i>This order was cancelled on {{ order.cancelled_at|date:"d M Y" }}.{% if order.cancel_reason %} Reason: {{ order.cancel_reason }}{% endif %}</div>
+{% elif order.status == "return_requested" or order.status == "returned" or order.status == "refunded" %}<div class="alert alert-light border small mt-3 mb-0"><i class="bi bi-arrow-counterclockwise text-rose me-1"></i>Status: <strong>{{ order.get_status_display }}</strong></div>{% endif %}

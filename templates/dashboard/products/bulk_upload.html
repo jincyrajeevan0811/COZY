@@ -1,0 +1,39 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Bulk product upload{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><a href="{% url 'dashboard:product_list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> Products</a><h1>Bulk upload</h1><p>Create or update many products at once from CSV or Excel. Products are matched by SKU.</p></div>
+  <a href="{% url 'dashboard:product_upload_template' %}" class="btn btn-d-light"><i class="bi bi-download me-1"></i>Download template</a>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <form class="d-card" method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <div class="d-card-body">
+        {% for field in form %}{% include "base/_field.html" %}{% endfor %}
+        <button class="btn btn-d"><i class="bi bi-upload me-1"></i>Upload & import</button>
+      </div>
+    </form>
+    {% if results %}
+    <div class="d-card mt-3"><div class="d-card-body">
+      <h5>Import results</h5>
+      <div class="d-flex gap-3 my-2"><span class="badge badge-soft-success">{{ results.created }} created</span><span class="badge badge-soft-info">{{ results.updated }} updated</span><span class="badge badge-soft-secondary">{{ results.skipped }} skipped</span><span class="badge badge-soft-danger">{{ results.errors|length }} errors</span></div>
+      {% if results.errors %}<ul class="small text-danger mb-0">{% for e in results.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </div></div>
+    {% endif %}
+  </div>
+  <div class="col-lg-5">
+    <div class="d-card"><div class="d-card-body small">
+      <h5>Columns</h5>
+      <p class="text-muted">The first row must contain these headers (order doesn't matter). <strong>name, sku, category, price</strong> are required.</p>
+      <div class="d-flex flex-wrap gap-1">{% for c in columns %}<code class="badge badge-soft-light">{{ c }}</code>{% endfor %}</div>
+      <ul class="mt-3 text-muted">
+        <li>Missing categories, sub categories, colours, materials and styles are created automatically.</li>
+        <li><code>stock</code> sets the exact quantity and is recorded in stock history.</li>
+        <li>Flags accept yes/no, true/false or 1/0.</li>
+        <li>Add images afterwards from each product's edit page.</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

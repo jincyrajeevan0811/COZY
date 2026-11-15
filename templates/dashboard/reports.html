@@ -1,0 +1,43 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Reports · {{ report.title }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Reports</h1><p>Live figures from orders, payments and inventory. Export any report to CSV, Excel or PDF.</p></div>
+  <div class="btn-group">
+    <a href="{% url_replace export='csv' %}" class="btn btn-d-light"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+    <a href="{% url_replace export='xlsx' %}" class="btn btn-d-light"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+    <a href="{% url_replace export='pdf' %}" class="btn btn-d-light"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  </div>
+</div>
+<div class="status-tabs">
+  {% for k, label in reports %}<a href="{% url 'dashboard:report' k %}?start={{ start|date:'Y-m-d' }}&end={{ end|date:'Y-m-d' }}" class="{% if k == key %}active{% endif %}">{{ label }}</a>{% endfor %}
+</div>
+<div class="d-card">
+  <div class="d-card-head">
+    <h5>{{ report.title }}</h5>
+    {% if key != "inventory" %}
+    <form class="filter-bar" method="get">
+      <input type="date" name="start" value="{{ start|date:'Y-m-d' }}" class="form-control" aria-label="Start date">
+      <input type="date" name="end" value="{{ end|date:'Y-m-d' }}" class="form-control" aria-label="End date">
+      {% if key == "sales" %}<select name="group" class="form-select"><option value="day" {% if group == "day" %}selected{% endif %}>Daily</option><option value="month" {% if group == "month" %}selected{% endif %}>Monthly</option><option value="year" {% if group == "year" %}selected{% endif %}>Yearly</option></select>{% endif %}
+      <button class="btn btn-d">Apply</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="table-responsive">
+    <table class="table table-d">
+      <thead><tr>{% for c in report.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for row in report.rows %}
+        <tr>{% for v in row %}<td>{% if forloop.counter0 in report.money_cols %}{{ v|inr }}{% else %}{{ v }}{% endif %}</td>{% endfor %}</tr>
+        {% empty %}
+        <tr><td colspan="{{ report.columns|length }}"><div class="empty-d"><i class="bi bi-graph-up"></i>No data for this period.</div></td></tr>
+        {% endfor %}
+      </tbody>
+      {% if report.totals and report.rows %}
+      <tfoot><tr class="fw-semibold" style="background:#FBF8F4">{% for v in report.totals %}<td>{% if forloop.counter0 in report.money_cols %}{{ v|inr }}{% else %}{{ v }}{% endif %}</td>{% endfor %}</tr></tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

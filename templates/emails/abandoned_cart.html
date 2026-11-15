@@ -1,0 +1,8 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 style="font-family:Georgia,serif;font-weight:normal;color:#2B2B2B;">Still thinking it over?</h1>
+<p>Hi {{ user.first_name }}, the pieces in your bag are waiting for you:</p>
+<ul>{% for item in items %}<li>{{ item.product.name }}{% if item.variant %} ({{ item.variant.name }}){% endif %} × {{ item.quantity }}</li>{% endfor %}</ul>
+<p>Popular styles sell out fast — complete your order before they're gone.</p>
+{% include "emails/_button.html" with url=cart_url label="Return to your bag" %}
+{% endblock %}

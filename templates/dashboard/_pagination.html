@@ -1,0 +1,15 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="d-flex justify-content-between align-items-center p-3 border-top flex-wrap gap-2">
+  <small class="text-muted">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</small>
+  <nav aria-label="Pagination"><ul class="pagination pagination-sm mb-0">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="{% url_replace page=page_obj.previous_page_number %}">‹</a></li>{% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if num == page_obj.number %}<li class="page-item active"><span class="page-link">{{ num }}</span></li>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}<li class="page-item"><a class="page-link" href="{% url_replace page=num %}">{{ num }}</a></li>{% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="{% url_replace page=page_obj.next_page_number %}">›</a></li>{% endif %}
+  </ul></nav>
+</div>
+{% elif page_obj.paginator.count %}
+<div class="p-3 border-top"><small class="text-muted">{{ page_obj.paginator.count }} record{{ page_obj.paginator.count|pluralize }}</small></div>
+{% endif %}

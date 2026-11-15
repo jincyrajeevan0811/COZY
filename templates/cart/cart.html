@@ -1,0 +1,114 @@
+{% extends "base/base.html" %}
+{% block title %}Your bag | {{ site.site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><h1>Your Bag</h1><p class="text-muted mb-0">{{ summary.item_count }} item{{ summary.item_count|pluralize }}</p></div></section>
+<div class="container py-5">
+  {% if summary.items %}
+  <div class="row g-5">
+    <div class="col-lg-8">
+      {% if site.free_shipping_threshold and summary.remaining_for_free_shipping > 0 %}
+      <div class="card-cozy py-3">
+        <div class="small">Add <strong>{{ summary.remaining_for_free_shipping|inr:"auto" }}</strong> more for <strong>FREE shipping</strong> ✨</div>
+        <div class="free-ship-bar"><span style="width:{{ summary.subtotal|percent_of:site.free_shipping_threshold }}%"></span></div>
+      </div>
+      {% elif site.free_shipping_threshold %}
+      <div class="card-cozy py-3 small"><i class="bi bi-truck text-rose me-2"></i>You've unlocked <strong>free shipping</strong>!</div>
+      {% endif %}
+
+      <div class="mt-3">
+        {% for item in summary.items %}
+        <div class="cart-item">
+          <a href="{{ item.product.get_absolute_url }}">
+            {% with img=item.product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="{{ item.product.name }}">{% else %}<span class="noimg d-block"></span>{% endif %}{% endwith %}
+          </a>
+          <div>
+            <span class="pc-cat">{{ item.product.category.name }}</span>
+            <h3 class="h6 mb-1 fw-medium" style="font-family:var(--cz-sans)"><a class="text-reset" href="{{ item.product.get_absolute_url }}">{{ item.product.name }}</a></h3>
+            {% if item.variant %}<div class="small text-muted">{{ item.variant.name }}</div>{% endif %}
+            <div class="price-row my-2">
+              <span class="price">{{ item.unit_price|inr:"auto" }}</span>
+              {% if item.unit_original_price > item.unit_price %}<span class="mrp">{{ item.unit_original_price|inr:"auto" }}</span>{% endif %}
+            </div>
+            {% if not item.is_available %}<div class="small text-danger mb-2"><i class="bi bi-exclamation-circle"></i> Only {{ item.available_stock }} available</div>{% endif %}
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+              <form method="post" action="{% url 'cart:update' item.id %}">
+                {% csrf_token %}
+                <div class="qty-input">
+                  <button type="button" data-qty="-" aria-label="Decrease">−</button>
+                  <input type="number" name="quantity" value="{{ item.quantity }}" min="0" max="10" class="js-auto-submit" aria-label="Quantity">
+                  <button type="button" data-qty="+" aria-label="Increase">+</button>
+                </div>
+              </form>
+              <form method="post" action="{% url 'cart:move_to_wishlist' item.id %}">{% csrf_token %}<button class="btn btn-link p-0 small text-muted"><i class="bi bi-heart me-1"></i>Save for later</button></form>
+              <form method="post" action="{% url 'cart:remove' item.id %}">{% csrf_token %}<button class="btn btn-link p-0 small text-muted"><i class="bi bi-trash me-1"></i>Remove</button></form>
+            </div>
+          </div>
+          <div class="text-end fw-semibold d-none d-sm-block">{{ item.line_total|inr:"auto" }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if site.gift_wrap_enabled %}
+      <form class="card-cozy mt-4" method="post" action="{% url 'cart:gift_wrap' %}">
+        {% csrf_token %}
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="gift_wrap" id="giftWrap" {% if cart.gift_wrap %}checked{% endif %}>
+          <label class="form-check-label fw-medium" for="giftWrap"><i class="bi bi-gift text-rose me-1"></i>Add premium gift wrap (+{{ site.gift_wrap_charge|inr:"auto" }})</label>
+        </div>
+        <input type="text" class="form-control mb-2" name="gift_message" maxlength="250" placeholder="Gift message (optional)" value="{{ cart.gift_message }}">
+        <button class="btn btn-light-cozy btn-sm">Save gift options</button>
+      </form>
+      {% endif %}
+      <a href="{% url 'products:list' %}" class="btn-link-cozy d-inline-block mt-4"><i class="bi bi-arrow-left"></i> Continue shopping</a>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="summary-card">
+        <h5 class="mb-3">Order summary</h5>
+        <form method="post" action="{% url 'cart:apply_coupon' %}" class="mb-3">
+          {% csrf_token %}
+          {% if summary.coupon %}
+          <div class="d-flex justify-content-between align-items-center bg-ivory rounded p-2 px-3">
+            <span><i class="bi bi-ticket-perforated text-rose me-1"></i><strong>{{ summary.coupon.code }}</strong> applied</span>
+            <button formaction="{% url 'cart:remove_coupon' %}" class="btn btn-link btn-sm text-muted p-0">Remove</button>
+          </div>
+          {% else %}
+          <div class="input-group">
+            <input type="text" name="code" class="form-control text-uppercase" placeholder="Coupon code" aria-label="Coupon code" required>
+            <button class="btn btn-cozy">Apply</button>
+          </div>
+          {% if user.is_authenticated %}<a href="{% url 'accounts:offers' %}" class="small text-rose d-inline-block mt-1">View available offers</a>{% endif %}
+          {% endif %}
+        </form>
+        <div class="summary-row"><span>Subtotal (MRP)</span><span>{{ summary.mrp_total|inr }}</span></div>
+        {% if summary.product_savings > 0 %}<div class="summary-row"><span>Product discount</span><span class="save">−{{ summary.product_savings|inr }}</span></div>{% endif %}
+        {% if summary.coupon_discount > 0 %}<div class="summary-row"><span>Coupon ({{ summary.coupon.code }})</span><span class="save">−{{ summary.coupon_discount|inr }}</span></div>{% endif %}
+        <div class="summary-row"><span>Shipping</span><span>{% if summary.shipping > 0 %}{{ summary.shipping|inr }}{% else %}<span class="save">FREE</span>{% endif %}</span></div>
+        {% if summary.gift_wrap_charge > 0 %}<div class="summary-row"><span>Gift wrap</span><span>{{ summary.gift_wrap_charge|inr }}</span></div>{% endif %}
+        <div class="summary-row"><span>GST ({{ summary.tax_percent|floatformat:"-2" }}%{% if summary.tax_inclusive %}, included{% endif %})</span><span>{{ summary.tax|inr }}</span></div>
+        <div class="summary-row total"><span>Total</span><span>{{ summary.grand_total|inr }}</span></div>
+        {% if summary.total_savings > 0 %}<p class="small text-success mt-2 mb-0"><i class="bi bi-stars"></i> You save {{ summary.total_savings|inr }} on this order</p>{% endif %}
+        <a href="{% url 'orders:checkout' %}" class="btn btn-cozy w-100 mt-4 {% if summary.has_issues %}disabled{% endif %}">Proceed to checkout <i class="bi bi-lock ms-1"></i></a>
+        {% if not user.is_authenticated %}<p class="small text-muted text-center mt-2 mb-0">You'll sign in or create an account at checkout — your bag is saved.</p>{% endif %}
+        <div class="text-center mt-3 small text-muted"><i class="bi bi-shield-check"></i> Secure checkout · UPI · Cards · Net banking{% if site.cod_enabled %} · COD{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  {% if suggestions %}
+  <section class="mt-5 pt-4">
+    <div class="section-head-row"><div><span class="eyebrow">Add a little extra</span><h2 class="mb-0">Bestsellers you'll love</h2></div></div>
+    <div class="row row-cols-2 row-cols-md-4 g-3">{% for product in suggestions %}<div class="col">{% include "base/_product_card.html" %}</div>{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-bag-heart"></i>
+    <h2 class="mt-3">Your bag is empty</h2>
+    <p class="text-muted">Looks like you haven't found your sparkle yet.</p>
+    <a href="{% url 'products:list' %}" class="btn btn-cozy">Start shopping</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

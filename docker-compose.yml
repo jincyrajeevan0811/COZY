@@ -1,0 +1,58 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-cozy}
+      MYSQL_USER: ${DB_USER:-cozy}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_ENGINE: mysql
+      DB_HOST: db
+      DB_PORT: "3306"
+      REDIS_URL: redis://redis:6379/1
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    volumes:
+      - media:/app/media
+
+  # Cancels unpaid online orders and releases stock every 10 minutes.
+  scheduler:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_ENGINE: mysql
+      DB_HOST: db
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    depends_on:
+      - web
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["while true; do python manage.py release_unpaid_orders; sleep 600; done"]
+
+volumes:
+  mysql_data:
+  media:

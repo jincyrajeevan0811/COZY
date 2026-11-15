@@ -1,0 +1,13 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-title"><div><h1>Notifications</h1><p>New orders, payments, stock alerts, returns, reviews and support activity.</p></div>
+  <form method="post">{% csrf_token %}<button class="btn btn-d-light">Mark all as read</button></form>
+</div>
+<div class="d-card">
+  {% for n in page_obj %}
+  <a href="{% url 'notifications:open' n.id %}" class="notif-item {% if not n.is_read %}unread{% endif %}"><i class="bi {{ n.icon }}"></i><div class="flex-grow-1"><div class="fw-medium small">{{ n.title }}</div><div class="small text-muted">{{ n.message }}</div></div><small class="text-muted text-nowrap">{{ n.created_at|timesince }} ago</small></a>
+  {% empty %}<div class="empty-d"><i class="bi bi-bell"></i>You're all caught up.</div>{% endfor %}
+  {% include "dashboard/_pagination.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{% if product %}Edit {{ product.name }}{% else %}New product{% endif %}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div>
+    <a href="{% url 'dashboard:product_list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> Products</a>
+    <h1>{% if product %}{{ product.name }}{% else %}New product{% endif %}</h1>
+    {% if product %}<p>SKU {{ product.sku }} · {{ product.sold_count }} sold · {{ product.view_count }} views</p>{% endif %}
+  </div>
+  {% if product %}<a href="{{ product.get_absolute_url }}" target="_blank" rel="noopener" class="btn btn-d-light"><i class="bi bi-eye me-1"></i>View in store</a>{% endif %}
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% for e in form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+  <div class="row g-3">
+    <div class="col-xl-8">
+      <div class="d-card mb-3"><div class="d-card-body">
+        <div class="form-section"><h6>Basic information</h6>
+          <div class="row gx-3">
+            <div class="col-md-8">{% include "base/_field.html" with field=form.name %}</div>
+            <div class="col-md-4">{% include "base/_field.html" with field=form.sku %}</div>
+            <div class="col-md-6">{% include "base/_field.html" with field=form.category %}</div>
+            <div class="col-md-6">
+              <div class="mb-3"><label class="form-label" for="id_subcategory">Sub category</label>
+                <select name="subcategory" id="id_subcategory" class="form-select" data-map="{{ subcategory_map }}">
+                  <option value="">—</option>
+                  {% for sub in form.fields.subcategory.queryset %}<option value="{{ sub.pk }}" {% if form.subcategory.value|stringformat:"s" == sub.pk|stringformat:"s" %}selected{% endif %}>{{ sub.name }}</option>{% endfor %}
+                </select>
+                {% for e in form.subcategory.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+            <div class="col-12">{% include "base/_field.html" with field=form.short_description %}</div>
+            <div class="col-12">{% include "base/_field.html" with field=form.description %}</div>
+          </div>
+        </div>
+        <div class="form-section"><h6>Pricing</h6>
+          <div class="row gx-3">
+            <div class="col-md-6">{% include "base/_field.html" with field=form.price %}</div>
+            <div class="col-md-6">{% include "base/_field.html" with field=form.original_price %}</div>
+          </div>
+        </div>
+        <div class="form-section mb-0"><h6>Attributes</h6>
+          <div class="row gx-3">
+            <div class="col-md-4">{% include "base/_field.html" with field=form.color %}</div>
+            <div class="col-md-4">{% include "base/_field.html" with field=form.material %}</div>
+            <div class="col-md-4">{% include "base/_field.html" with field=form.style %}</div>
+            <div class="col-md-6">{% include "base/_field.html" with field=form.size_info %}</div>
+            <div class="col-md-6">{% include "base/_field.html" with field=form.weight_grams %}</div>
+            <div class="col-12">{% include "base/_field.html" with field=form.care_instructions %}</div>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="d-card mb-3">
+        <div class="d-card-head"><h5>Images</h5><small class="text-muted">The primary image appears in listings. JPG, PNG or WEBP up to 5 MB.</small></div>
+        <div class="d-card-body">
+          {{ image_fs.management_form }}
+          {% for e in image_fs.non_form_errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+          {% if image_fs.forms %}
+          <div class="row g-3 mb-3">
+            {% for f in image_fs.forms %}
+            <div class="col-6 col-md-3">
+              <div class="img-tile {% if f.instance.is_primary %}primary{% endif %}">
+                {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+                {% if f.instance.image %}<img src="{{ f.instance.image.url }}" alt="">{% endif %}
+                <div class="small mt-2">
+                  <div class="form-check">{{ f.is_primary }}<label class="form-check-label" for="{{ f.is_primary.id_for_label }}">Primary</label></div>
+                  <div class="form-check">{{ f.DELETE }}<label class="form-check-label text-danger" for="{{ f.DELETE.id_for_label }}">Remove</label></div>
+                  <div class="d-none">{{ f.image }}</div>
+                  {{ f.alt_text }}
+                  <div class="mt-1">{{ f.display_order }}</div>
+                </div>
+                {% for e in f.errors.values %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="upload-drop">
+            <i class="bi bi-cloud-arrow-up fs-2 text-muted"></i>
+            <div class="small text-muted mb-2">Select one or more images to upload</div>
+            {{ form.upload_images }}
+            {% for e in form.upload_images.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="d-card mb-3">
+        <div class="d-card-head"><h5>Variants</h5><small class="text-muted">Enable “Has variants” to sell sizes/colours with their own stock and price.</small></div>
+        <div class="d-card-body">
+          {{ variant_fs.management_form }}
+          {% for e in variant_fs.non_form_errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+          <div class="table-responsive">
+            <table class="table table-d">
+              <thead><tr><th>Name</th><th>SKU</th><th>Colour</th><th>Size</th><th>Price</th><th>MRP</th><th>Active</th><th>Order</th><th>Delete</th></tr></thead>
+              <tbody id="variants-rows">
+                {% for f in variant_fs.forms %}
+                <tr>
+                  {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+                  <td>{{ f.name }}{% for e in f.name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</td>
+                  <td>{{ f.sku }}{% for e in f.sku.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</td>
+                  <td>{{ f.color }}</td><td>{{ f.size }}</td><td>{{ f.price }}</td><td>{{ f.original_price }}</td>
+                  <td>{{ f.is_active }}</td><td style="width:80px">{{ f.display_order }}</td><td>{% if f.instance.pk %}{{ f.DELETE }}{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <template id="variants-empty">
+            <tr>{% with f=variant_fs.empty_form %}{% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}<td>{{ f.name }}</td><td>{{ f.sku }}</td><td>{{ f.color }}</td><td>{{ f.size }}</td><td>{{ f.price }}</td><td>{{ f.original_price }}</td><td>{{ f.is_active }}</td><td style="width:80px">{{ f.display_order }}</td><td></td>{% endwith %}</tr>
+          </template>
+          <button type="button" class="btn btn-d-light btn-sm" data-formset-add="variants"><i class="bi bi-plus"></i> Add variant</button>
+          {% if inventories %}
+          <div class="mt-3 small">
+            <strong>Current stock:</strong>
+            {% for inv in inventories %}{% if inv.variant or not product.has_variants %}<span class="badge badge-soft-light me-1">{% if inv.variant %}{{ inv.variant.name }}{% else %}Base{% endif %}: {{ inv.quantity }}</span>{% endif %}{% endfor %}
+            <a href="{% url 'dashboard:inventory_list' %}?q={{ product.sku }}" class="ms-2">Adjust stock →</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="d-card mb-3"><div class="d-card-body">
+        <div class="form-section"><h6>Visibility</h6>
+          {% include "base/_field.html" with field=form.is_active %}
+          {% include "base/_field.html" with field=form.is_new_arrival %}
+          {% include "base/_field.html" with field=form.is_featured %}
+          {% include "base/_field.html" with field=form.is_trending %}
+          {% include "base/_field.html" with field=form.is_bestseller %}
+        </div>
+        <div class="form-section"><h6>Stock & returns</h6>
+          {% include "base/_field.html" with field=form.has_variants %}
+          {% if form.initial_stock %}{% include "base/_field.html" with field=form.initial_stock %}{% endif %}
+          {% include "base/_field.html" with field=form.is_returnable %}
+          {% include "base/_field.html" with field=form.return_days %}
+        </div>
+        <div class="form-section mb-0"><h6>Search & SEO</h6>
+          {% include "base/_field.html" with field=form.tags %}
+          {% include "base/_field.html" with field=form.meta_title %}
+          {% include "base/_field.html" with field=form.meta_description %}
+          {% include "base/_field.html" with field=form.meta_keywords %}
+        </div>
+      </div></div>
+      <div class="d-grid gap-2 position-sticky" style="top:90px">
+        <button class="btn btn-d"><i class="bi bi-check2 me-1"></i>Save product</button>
+        <button class="btn btn-d-light" name="save_continue" value="1">Save & continue editing</button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

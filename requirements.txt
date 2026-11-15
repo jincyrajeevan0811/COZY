@@ -1,0 +1,9 @@
+Django>=5.2,<6.1
+Pillow>=10.4
+python-dotenv>=1.0
+mysqlclient>=2.2        # MySQL driver (needs libmysqlclient-dev / pkg-config to build)
+reportlab>=4.2          # PDF invoices and report exports
+openpyxl>=3.1           # Excel exports and bulk product upload
+whitenoise>=6.7         # static files in production
+gunicorn>=22.0          # production WSGI server
+redis>=5.0              # optional: only needed when REDIS_URL is set

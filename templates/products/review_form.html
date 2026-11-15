@@ -1,0 +1,30 @@
+{% extends "base/base.html" %}
+{% block title %}Review {{ product.name }} | {{ site.site_name }}{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width:760px">
+  <a href="{{ product.get_absolute_url }}" class="small text-muted"><i class="bi bi-arrow-left"></i> Back to product</a>
+  <div class="card-cozy mt-3">
+    <div class="d-flex gap-3 align-items-center mb-4">
+      {% with img=product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="" style="width:72px;height:88px;object-fit:cover;border-radius:10px">{% endif %}{% endwith %}
+      <div><span class="eyebrow mb-0">{% if review %}Edit your review{% else %}Write a review{% endif %}</span><h2 class="h3 mb-0">{{ product.name }}</h2></div>
+    </div>
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Your rating</label>
+        <div class="rating-input">
+          {% for radio in form.rating %}
+          <input type="radio" name="{{ radio.data.name }}" id="star{{ radio.data.value }}" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %}><label for="star{{ radio.data.value }}" title="{{ radio.data.value }} stars"></label>
+          {% endfor %}
+        </div>
+        {{ form.rating.errors }}
+      </div>
+      <div class="mb-3"><label class="form-label" for="{{ form.title.id_for_label }}">Headline</label>{{ form.title }}{{ form.title.errors }}</div>
+      <div class="mb-3"><label class="form-label" for="{{ form.comment.id_for_label }}">Your review</label>{{ form.comment }}{{ form.comment.errors }}</div>
+      <div class="mb-4"><label class="form-label" for="{{ form.images.id_for_label }}">{{ form.images.label }}</label>{{ form.images }}{{ form.images.errors }}</div>
+      <p class="small text-muted">Reviews are published after moderation. Purchases delivered to you get a “Verified purchase” badge.</p>
+      <button class="btn btn-cozy">Submit review</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

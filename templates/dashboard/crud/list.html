@@ -1,0 +1,42 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ cfg.title }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1><i class="bi {{ cfg.icon }} me-2 text-muted fs-4"></i>{{ cfg.title }}</h1>{% if cfg.description %}<p>{{ cfg.description }}</p>{% endif %}</div>
+  {% if create_url %}<a href="{{ create_url }}" class="btn btn-d"><i class="bi bi-plus-lg me-1"></i>Add {{ cfg.singular|lower }}</a>{% endif %}
+</div>
+<div class="d-card">
+  <div class="d-card-head">
+    <form class="filter-bar" method="get">
+      {% if cfg.search_fields %}<input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="Search {{ cfg.title|lower }}…">{% endif %}
+      {% for lookup, label, choices in filters %}
+      <select name="{{ lookup }}" class="form-select" onchange="this.form.submit()" aria-label="{{ label }}">
+        <option value="">{{ label }}: all</option>
+        {% for val, text in choices %}<option value="{{ val }}" {% if active_filters|get_item:lookup == val %}selected{% endif %}>{{ text }}</option>{% endfor %}
+      </select>
+      {% endfor %}
+      {% if cfg.search_fields or filters %}<button class="btn btn-d-light"><i class="bi bi-funnel"></i></button>{% endif %}
+      {% if q or active_filters %}<a href="{{ request.path }}" class="small">Reset</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-d">
+      <thead><tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}<th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}
+          <td class="text-end text-nowrap">
+            <a href="{{ row.edit_url }}" class="btn btn-d-light btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+            {% if row.delete_url %}<form method="post" action="{{ row.delete_url }}" class="d-inline" data-confirm="Delete “{{ row.obj }}”? This cannot be undone.">{% csrf_token %}<button class="btn btn-d-light btn-icon text-danger" title="Delete"><i class="bi bi-trash"></i></button></form>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="{{ headers|length|add:1 }}"><div class="empty-d"><i class="bi {{ cfg.icon }}"></i>No {{ cfg.title|lower }} yet.{% if create_url %} <a href="{{ create_url }}">Add the first one</a>.{% endif %}</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "dashboard/_pagination.html" %}
+</div>
+{% endblock %}

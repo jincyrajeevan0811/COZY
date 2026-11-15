@@ -1,0 +1,67 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_tags %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Products</h1><p>{{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }} in the catalogue</p></div>
+  {% if request.user|can:"products.manage" %}
+  <div class="d-flex gap-2">
+    <a href="{% url 'dashboard:product_bulk_upload' %}" class="btn btn-d-light"><i class="bi bi-upload me-1"></i>Bulk upload</a>
+    <a href="{% url 'dashboard:product_create' %}" class="btn btn-d"><i class="bi bi-plus-lg me-1"></i>Add product</a>
+  </div>
+  {% endif %}
+</div>
+<div class="d-card">
+  <div class="d-card-head">
+    <form class="filter-bar" method="get">
+      <input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="Search name, SKU, tags…">
+      <select name="category" class="form-select" onchange="this.form.submit()"><option value="">All categories</option>{% for c in categories %}<option value="{{ c.pk }}" {% if request.GET.category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+      <select name="status" class="form-select" onchange="this.form.submit()"><option value="">Any status</option><option value="active" {% if request.GET.status == "active" %}selected{% endif %}>Active</option><option value="inactive" {% if request.GET.status == "inactive" %}selected{% endif %}>Inactive</option></select>
+      <select name="stock" class="form-select" onchange="this.form.submit()"><option value="">Any stock</option><option value="low" {% if request.GET.stock == "low" %}selected{% endif %}>Low stock</option><option value="out" {% if request.GET.stock == "out" %}selected{% endif %}>Out of stock</option></select>
+      <select name="flag" class="form-select" onchange="this.form.submit()"><option value="">Any flag</option><option value="is_featured" {% if request.GET.flag == "is_featured" %}selected{% endif %}>Featured</option><option value="is_trending" {% if request.GET.flag == "is_trending" %}selected{% endif %}>Trending</option><option value="is_bestseller" {% if request.GET.flag == "is_bestseller" %}selected{% endif %}>Bestseller</option><option value="is_new_arrival" {% if request.GET.flag == "is_new_arrival" %}selected{% endif %}>New arrival</option></select>
+      <select name="sort" class="form-select" onchange="this.form.submit()"><option value="-created_at">Newest</option><option value="name" {% if request.GET.sort == "name" %}selected{% endif %}>Name</option><option value="-sold_count" {% if request.GET.sort == "-sold_count" %}selected{% endif %}>Best selling</option><option value="price" {% if request.GET.sort == "price" %}selected{% endif %}>Price ↑</option><option value="-price" {% if request.GET.sort == "-price" %}selected{% endif %}>Price ↓</option><option value="stock_total" {% if request.GET.sort == "stock_total" %}selected{% endif %}>Stock ↑</option></select>
+      <button class="btn btn-d-light"><i class="bi bi-funnel"></i></button>
+    </form>
+  </div>
+  <form method="post" action="{% url 'dashboard:product_bulk_action' %}" data-confirm="Apply this action to the selected products?">
+    {% csrf_token %}
+    {% if request.user|can:"products.manage" %}
+    <div class="d-flex gap-2 align-items-center px-3 pt-3">
+      <select name="action" class="form-select form-select-sm" style="width:auto"><option value="">Bulk action…</option><option value="activate">Activate</option><option value="deactivate">Deactivate</option><option value="feature">Mark featured</option><option value="trending">Mark trending</option><option value="bestseller">Mark bestseller</option></select>
+      <button class="btn btn-d-light btn-sm">Apply</button>
+    </div>
+    {% endif %}
+    <div class="table-responsive">
+      <table class="table table-d">
+        <thead><tr><th style="width:30px"><input type="checkbox" class="form-check-input" data-select-all=".row-check" aria-label="Select all"></th><th></th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Sold</th><th>Flags</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+          {% for p in page_obj %}
+          <tr>
+            <td><input type="checkbox" class="form-check-input row-check" name="ids" value="{{ p.pk }}" aria-label="Select {{ p.name }}"></td>
+            <td>{% with img=p.primary_image %}{% if img %}<img src="{{ img.image.url }}" class="table-thumb" alt="">{% else %}<span class="table-thumb"><i class="bi bi-gem"></i></span>{% endif %}{% endwith %}</td>
+            <td><a href="{% url 'dashboard:product_edit' p.pk %}" class="fw-medium text-dark">{{ p.name }}</a><div class="small text-muted">{{ p.sku }}{% if p.has_variants %} · variants{% endif %}</div></td>
+            <td class="small">{{ p.category.name }}{% if p.subcategory %}<div class="text-muted">{{ p.subcategory.name }}</div>{% endif %}</td>
+            <td>{{ p.price|inr:"auto" }}{% if p.discount_percent %}<div class="small text-muted"><s>{{ p.original_price|inr:"auto" }}</s> -{{ p.discount_percent }}%</div>{% endif %}</td>
+            <td>{% with s=p.stock_total|default:0 %}{% if s <= 0 %}<span class="badge badge-soft-danger">Out</span>{% elif s <= 5 %}<span class="badge badge-soft-warning">{{ s }} low</span>{% else %}<span class="badge badge-soft-success">{{ s }}</span>{% endif %}{% endwith %}</td>
+            <td>{{ p.sold_count }}</td>
+            <td class="small">{% if p.is_featured %}<span class="badge badge-soft-primary">Featured</span> {% endif %}{% if p.is_trending %}<span class="badge badge-soft-info">Trending</span> {% endif %}{% if p.is_bestseller %}<span class="badge badge-soft-warning">Best</span> {% endif %}{% if p.is_new_arrival %}<span class="badge badge-soft-secondary">New</span>{% endif %}</td>
+            <td>{% if p.is_active %}<span class="badge badge-soft-success">Active</span>{% else %}<span class="badge badge-soft-secondary">Inactive</span>{% endif %}</td>
+            <td class="text-end text-nowrap">
+              <a href="{{ p.get_absolute_url }}" target="_blank" rel="noopener" class="btn btn-d-light btn-icon" title="View in store"><i class="bi bi-eye"></i></a>
+              {% if request.user|can:"products.manage" %}
+              <a href="{% url 'dashboard:product_edit' p.pk %}" class="btn btn-d-light btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+              <button formaction="{% url 'dashboard:product_toggle' p.pk %}" class="btn btn-d-light btn-icon" title="{% if p.is_active %}Deactivate{% else %}Activate{% endif %}"><i class="bi bi-power"></i></button>
+              <button formaction="{% url 'dashboard:product_delete' p.pk %}" class="btn btn-d-light btn-icon text-danger" title="Delete"><i class="bi bi-trash"></i></button>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="10"><div class="empty-d"><i class="bi bi-gem"></i>No products match these filters.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+  {% include "dashboard/_pagination.html" %}
+</div>
+{% endblock %}

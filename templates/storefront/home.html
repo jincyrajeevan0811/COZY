@@ -1,0 +1,217 @@
+{% extends "base/base.html" %}
+{% block content %}
+{% for block in sections %}
+{% with s=block.section items=block.items %}
+
+{% if block.key == "hero" and not items %}
+<section class="hero-fallback">
+  <div class="container"><div class="col-lg-6">
+    <span class="eyebrow">Welcome to {{ site.site_name }}</span>
+    <h1>{{ site.tagline }}</h1>
+    <p class="text-muted">Add hero banners from the dashboard to replace this welcome block.</p>
+    <a class="btn btn-cozy mt-2" href="{% url 'products:list' %}">Shop the collection</a>
+  </div></div>
+</section>
+
+{% elif block.key == "hero" %}
+<section class="hero">
+  <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5500">
+    {% if items|length > 1 %}
+    <div class="carousel-indicators">
+      {% for b in items %}<button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="carousel-inner">
+      {% for b in items %}
+      <div class="carousel-item {% if forloop.first %}active{% endif %}">
+        <picture>
+          {% if b.mobile_image %}<source media="(max-width: 767px)" srcset="{{ b.mobile_image.url }}">{% endif %}
+          <img src="{{ b.image.url }}" alt="{{ b.title }}" {% if not forloop.first %}loading="lazy"{% endif %}>
+        </picture>
+        <div class="hero-overlay align-{{ b.text_align }}"></div>
+        <div class="hero-content align-{{ b.text_align }}">
+          <div class="container"><div class="inner">
+            {% if b.eyebrow %}<span class="eyebrow">{{ b.eyebrow }}</span>{% endif %}
+            <h1>{{ b.title }}</h1>
+            {% if b.subtitle %}<p>{{ b.subtitle }}</p>{% endif %}
+            {% if b.link %}<a href="{{ b.link }}" class="btn btn-cozy">{{ b.button_text|default:"Shop now" }} <i class="bi bi-arrow-right ms-1"></i></a>{% endif %}
+          </div></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if items|length > 1 %}
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button>
+    {% endif %}
+  </div>
+</section>
+
+{% elif block.key == "usp" %}
+<section class="usp-strip">
+  <div class="container">
+    <div class="row row-cols-2 row-cols-lg-4">
+      <div class="col"><div class="usp-item"><i class="bi bi-truck"></i><div><strong>Free shipping</strong><small>On orders above {{ site.free_shipping_threshold|inr:"auto" }}</small></div></div></div>
+      <div class="col"><div class="usp-item"><i class="bi bi-arrow-repeat"></i><div><strong>Easy returns</strong><small>{{ site.return_window_days }}-day hassle-free returns</small></div></div></div>
+      <div class="col"><div class="usp-item"><i class="bi bi-shield-check"></i><div><strong>Secure payments</strong><small>UPI, cards, net banking{% if site.cod_enabled %} & COD{% endif %}</small></div></div></div>
+      <div class="col"><div class="usp-item"><i class="bi bi-gift"></i><div><strong>Gift ready</strong><small>Elegant gift wrapping</small></div></div></div>
+    </div>
+  </div>
+</section>
+
+{% elif block.key == "categories" %}
+<section class="section">
+  <div class="container">
+    <div class="section-head reveal"><span class="eyebrow">Collections</span><h2>{{ s.title|default:"Shop by Category" }}</h2>{% if s.subtitle %}<p>{{ s.subtitle }}</p>{% endif %}</div>
+    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-{% if items|length > 6 %}6{% else %}{{ items|length }}{% endif %} g-4 justify-content-center">
+      {% for cat in items %}
+      <div class="col reveal">
+        <a class="cat-card" href="{{ cat.get_absolute_url }}">
+          <div class="cat-img">{% if cat.image %}<img src="{{ cat.image.url }}" alt="{{ cat.name }}" loading="lazy">{% else %}<span class="cat-placeholder"><i class="bi bi-gem"></i></span>{% endif %}</div>
+          <h3>{{ cat.name }}</h3>
+          <small>Explore</small>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% elif block.key == "new_arrivals" or block.key == "bestsellers" or block.key == "trending" or block.key == "featured" or block.key == "discount" %}
+<section class="section {% if block.key == 'bestsellers' or block.key == 'discount' %}bg-ivory{% endif %}">
+  <div class="container">
+    <div class="section-head-row reveal">
+      <div>
+        <span class="eyebrow">{% if block.key == "new_arrivals" %}Just in{% elif block.key == "bestsellers" %}Most loved{% elif block.key == "trending" %}On trend{% elif block.key == "discount" %}Limited time{% else %}Curated{% endif %}</span>
+        <h2 class="mb-1">{{ s.title }}</h2>
+        {% if s.subtitle %}<p class="text-muted mb-0">{{ s.subtitle }}</p>{% endif %}
+      </div>
+      <a class="btn-link-cozy" href="{% if block.key == 'new_arrivals' %}{% url 'products:collection' 'new-arrivals' %}{% elif block.key == 'bestsellers' %}{% url 'products:collection' 'best-sellers' %}{% elif block.key == 'trending' %}{% url 'products:collection' 'trending' %}{% elif block.key == 'discount' %}{% url 'products:collection' 'offers' %}{% else %}{% url 'products:collection' 'featured' %}{% endif %}">View all <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-lg-4">
+      {% for product in items %}<div class="col reveal">{% include "base/_product_card.html" %}</div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+{% elif block.key == "promo_banners" %}
+<section class="section-sm">
+  <div class="container">
+    <div class="row g-4">
+      {% for b in items %}
+      <div class="col-md-6 reveal">
+        <a class="promo-tile" href="{{ b.link|default:'#' }}">
+          <img src="{{ b.image.url }}" alt="{{ b.title }}" loading="lazy">
+          <div class="promo-text">
+            {% if b.eyebrow %}<span class="eyebrow">{{ b.eyebrow }}</span>{% endif %}
+            <h3>{{ b.title }}</h3>
+            {% if b.subtitle %}<p>{{ b.subtitle }}</p>{% endif %}
+            <span class="btn-link-cozy">{{ b.button_text|default:"Shop now" }}</span>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% elif block.key == "offers" %}
+{% with b=items.0 %}
+<section class="section-sm">
+  <div class="container">
+    <div class="offer-strip reveal">
+      <img src="{{ b.image.url }}" alt="" loading="lazy">
+      <div class="offer-content">
+        {% if b.eyebrow %}<span class="eyebrow text-white-50">{{ b.eyebrow }}</span>{% endif %}
+        <h2>{{ b.title }}</h2>
+        {% if b.subtitle %}<p class="mb-4">{{ b.subtitle }}</p>{% endif %}
+        {% if b.link %}<a href="{{ b.link }}" class="btn btn-rose">{{ b.button_text|default:"Shop the offer" }}</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endwith %}
+
+{% elif block.key == "brand_intro" %}
+<section class="section">
+  <div class="container">
+    <div class="brand-intro reveal">
+      <div class="row g-0 align-items-stretch">
+        <div class="col-lg-6"><div class="brand-img">{% if site.brand_image %}<img src="{{ site.brand_image.url }}" alt="{{ site.site_name }}" loading="lazy">{% endif %}</div></div>
+        <div class="col-lg-6 d-flex align-items-center">
+          <div class="brand-copy">
+            <span class="eyebrow">The {{ site.site_name }} story</span>
+            <h2>{{ site.brand_title }}</h2>
+            <p class="text-muted mt-3">{{ site.brand_text|linebreaksbr }}</p>
+            <div class="brand-stats">
+              <div><strong>{{ site.return_window_days }}-day</strong><small>Easy returns</small></div>
+              <div><strong>100%</strong><small>Secure checkout</small></div>
+              <div><strong>Pan-India</strong><small>Delivery</small></div>
+            </div>
+            <a href="{% url 'products:list' %}" class="btn btn-cozy mt-4">Discover the collection</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% elif block.key == "testimonials" %}
+<section class="section bg-ivory">
+  <div class="container">
+    <div class="section-head reveal"><span class="eyebrow">Reviews</span><h2>{{ s.title|default:"Loved by our community" }}</h2>{% if s.subtitle %}<p>{{ s.subtitle }}</p>{% endif %}</div>
+    <div class="row g-4">
+      {% for t in items|slice:":3" %}
+      <div class="col-md-4 reveal">
+        <div class="testimonial-card">
+          <div class="stars mb-2">{{ t.rating|stars }}</div>
+          <p>{{ t.text }}</p>
+          <div class="who">
+            {% if t.image %}<img src="{{ t.image.url }}" alt="{{ t.name }}" loading="lazy">{% else %}<span class="avatar">{{ t.name|first }}</span>{% endif %}
+            <div><strong>{{ t.name }}</strong>{% if t.location %}<br><small class="text-muted">{{ t.location }}</small>{% endif %}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% elif block.key == "instagram" %}
+<section class="section">
+  <div class="container-fluid px-0">
+    <div class="section-head reveal"><span class="eyebrow">{{ site.instagram_handle }}</span><h2>{{ s.title|default:"#WearCOZY" }}</h2>{% if s.subtitle %}<p>{{ s.subtitle }}</p>{% endif %}</div>
+    <div class="insta-grid">
+      {% for post in items|slice:":6" %}<a href="{{ post.link|default:site.instagram_url|default:'#' }}" target="_blank" rel="noopener" aria-label="{{ post.caption|default:'Instagram post' }}"><img src="{{ post.image.url }}" alt="{{ post.caption }}" loading="lazy"></a>{% endfor %}
+    </div>
+  </div>
+</section>
+
+{% elif block.key == "newsletter" %}
+<section class="section">
+  <div class="container">
+    <div class="newsletter reveal">
+      <span class="eyebrow">Newsletter</span>
+      <h2>{{ site.newsletter_title }}</h2>
+      <p class="text-muted mb-0">{{ site.newsletter_text }}</p>
+      <form class="js-newsletter" method="post" action="{% url 'site:newsletter_subscribe' %}">
+        {% csrf_token %}
+        <input type="email" name="email" class="form-control" placeholder="Your email address" required aria-label="Email address">
+        <button class="btn btn-cozy" type="submit">Subscribe</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endwith %}
+{% empty %}
+<section class="hero-fallback">
+  <div class="container"><div class="col-lg-6">
+    <span class="eyebrow">Welcome to {{ site.site_name }}</span>
+    <h1>{{ site.tagline }}</h1>
+    <a class="btn btn-cozy mt-3" href="{% url 'products:list' %}">Shop the collection</a>
+  </div></div>
+</section>
+{% endfor %}
+{% endblock %}

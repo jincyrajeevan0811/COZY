@@ -1,0 +1,47 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Orders</h1><p>{{ page_obj.paginator.count }} order{{ page_obj.paginator.count|pluralize }} found</p></div>
+  <a href="{% url_replace export='csv' %}" class="btn btn-d-light"><i class="bi bi-filetype-csv me-1"></i>Export CSV</a>
+</div>
+<div class="status-tabs">
+  <a href="{% url 'dashboard:order_list' %}" class="{% if not request.GET.status %}active{% endif %}">All</a>
+  {% for val, label in status_choices %}<a href="?status={{ val }}" class="{% if request.GET.status == val %}active{% endif %}">{{ label }}<span class="n">{{ counts|get_item:val|default:0 }}</span></a>{% endfor %}
+</div>
+<div class="d-card">
+  <div class="d-card-head">
+    <form class="filter-bar" method="get">
+      {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+      <input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="Order no., name, email, phone, AWB…">
+      <select name="payment_status" class="form-select"><option value="">Payment status</option>{% for v, l in payment_status_choices %}<option value="{{ v }}" {% if request.GET.payment_status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <select name="payment_method" class="form-select"><option value="">Payment method</option>{% for v, l in payment_method_choices %}<option value="{{ v }}" {% if request.GET.payment_method == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <input type="date" name="start" value="{{ request.GET.start }}" class="form-control" aria-label="From date">
+      <input type="date" name="end" value="{{ request.GET.end }}" class="form-control" aria-label="To date">
+      <button class="btn btn-d"><i class="bi bi-funnel me-1"></i>Filter</button>
+      {% if request.GET %}<a href="{% url 'dashboard:order_list' %}" class="small">Reset</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-d">
+      <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Payment</th><th>Status</th><th class="text-end">Total</th><th></th></tr></thead>
+      <tbody>
+        {% for o in page_obj %}
+        <tr>
+          <td><a href="{% url 'dashboard:order_detail' o.order_number %}" class="fw-semibold">{{ o.order_number }}</a></td>
+          <td class="small text-nowrap">{{ o.created_at|date:"d M Y" }}<div class="text-muted">{{ o.created_at|date:"h:i A" }}</div></td>
+          <td>{{ o.full_name }}<div class="small text-muted">{{ o.phone }} · {{ o.city }}</div></td>
+          <td>{% status_badge o.payment_status o.get_payment_status_display %}<div class="small text-muted">{{ o.get_payment_method_display }}</div></td>
+          <td>{% status_badge o.status o.get_status_display %}</td>
+          <td class="text-end fw-semibold">{{ o.grand_total|inr }}</td>
+          <td class="text-end"><a href="{% url 'dashboard:order_detail' o.order_number %}" class="btn btn-d-light btn-sm">Open</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7"><div class="empty-d"><i class="bi bi-bag"></i>No orders match these filters.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "dashboard/_pagination.html" %}
+</div>
+{% endblock %}

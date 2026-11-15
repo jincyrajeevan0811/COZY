@@ -1,0 +1,18 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}My reviews | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<h1 class="h2 mb-4">My reviews</h1>
+{% for r in reviews %}
+<div class="card-cozy">
+  <div class="d-flex justify-content-between flex-wrap gap-2">
+    <a href="{{ r.product.get_absolute_url }}" class="fw-medium text-reset">{{ r.product.name }}</a>
+    {% status_badge r.status %}
+  </div>
+  <div class="my-1">{{ r.rating|stars }} {% if r.title %}<strong class="ms-1">{{ r.title }}</strong>{% endif %}</div>
+  <p class="small mb-2">{{ r.comment }}</p>
+  <div class="small text-muted">{{ r.created_at|date:"d M Y" }}{% if r.is_verified_purchase %} · <span class="text-success"><i class="bi bi-patch-check-fill"></i> Verified purchase</span>{% endif %} · <a href="{% url 'reviews:write' r.product_id %}">Edit</a></div>
+</div>
+{% empty %}
+<div class="empty-state"><i class="bi bi-star"></i><p class="text-muted mt-2 mb-0">You haven't written any reviews yet. Share your thoughts on pieces you've bought from your order page.</p></div>
+{% endfor %}
+{% endblock %}

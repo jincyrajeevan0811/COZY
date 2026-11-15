@@ -1,0 +1,44 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Reviews{% endblock %}
+{% block content %}
+<div class="page-title"><div><h1>Product reviews</h1><p>{{ pending_count }} awaiting moderation. Only approved reviews are shown in the store.</p></div></div>
+<div class="status-tabs">
+  <a href="{% url 'dashboard:review_list' %}" class="{% if not status %}active{% endif %}">All</a>
+  <a href="?status=pending" class="{% if status == 'pending' %}active{% endif %}">Pending <span class="n">{{ pending_count }}</span></a>
+  <a href="?status=approved" class="{% if status == 'approved' %}active{% endif %}">Approved</a>
+  <a href="?status=rejected" class="{% if status == 'rejected' %}active{% endif %}">Rejected</a>
+</div>
+<div class="d-card">
+  <div class="d-card-head">
+    <form class="filter-bar" method="get">
+      {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+      <input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="Product, text or email…">
+      <select name="rating" class="form-select" onchange="this.form.submit()"><option value="">Any rating</option>{% for n in "54321" %}<option value="{{ n }}" {% if request.GET.rating == n %}selected{% endif %}>{{ n }} stars</option>{% endfor %}</select>
+      <button class="btn btn-d-light"><i class="bi bi-funnel"></i></button>
+    </form>
+  </div>
+  <div class="d-card-body p-0">
+    {% for r in page_obj %}
+    <div class="p-3 border-bottom">
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <div><span style="color:#C9A66B">{{ r.rating|stars }}</span> <strong class="ms-1">{{ r.title }}</strong><div class="small text-muted">{{ r.product.name }} · by {{ r.user.full_name }} ({{ r.user.email }}) · {{ r.created_at|date:"d M Y" }}{% if r.is_verified_purchase %} · <span class="text-success"><i class="bi bi-patch-check-fill"></i> Verified purchase</span>{% endif %}</div></div>
+        {% status_badge r.status %}
+      </div>
+      <p class="my-2">{{ r.comment|linebreaksbr }}</p>
+      {% if r.images.all %}<div class="d-flex gap-2 mb-2">{% for im in r.images.all %}<a href="{{ im.image.url }}" target="_blank" rel="noopener"><img src="{{ im.image.url }}" class="table-thumb" style="width:64px;height:64px" alt=""></a>{% endfor %}</div>{% endif %}
+      <form method="post" action="{% url 'dashboard:review_action' r.pk %}" class="d-flex gap-2 flex-wrap align-items-center">
+        {% csrf_token %}
+        <input type="text" name="admin_reply" value="{{ r.admin_reply }}" class="form-control form-control-sm" placeholder="Public reply (optional)" style="max-width:420px">
+        {% if r.status != "approved" %}<button name="action" value="approved" class="btn btn-d btn-sm"><i class="bi bi-check2"></i> Approve</button>{% endif %}
+        {% if r.status != "rejected" %}<button name="action" value="rejected" class="btn btn-d-light btn-sm">Reject</button>{% endif %}
+        <button name="action" value="reply" class="btn btn-d-light btn-sm">Save reply</button>
+        <button name="action" value="delete" class="btn btn-d-light btn-sm text-danger" onclick="return confirm('Delete this review permanently?')">Delete</button>
+      </form>
+    </div>
+    {% empty %}
+    <div class="empty-d"><i class="bi bi-star"></i>No reviews here.</div>
+    {% endfor %}
+  </div>
+  {% include "dashboard/_pagination.html" %}
+</div>
+{% endblock %}

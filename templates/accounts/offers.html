@@ -1,0 +1,21 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}Coupons & offers | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<h1 class="h2 mb-4">Coupons & offers</h1>
+<div class="row g-3">
+  {% for c in coupons %}
+  <div class="col-md-6">
+    <div class="coupon-card">
+      <div>
+        <div class="fw-semibold text-rose">{{ c.label }}{% if c.max_discount and c.discount_type == "percent" %} <small class="text-muted fw-normal">up to {{ c.max_discount|inr:"auto" }}</small>{% endif %}</div>
+        <div class="small">{{ c.description|default:"On your next order" }}</div>
+        <div class="small text-muted">{% if c.min_order_value %}Min. order {{ c.min_order_value|inr:"auto" }} · {% endif %}{% if c.valid_to %}Valid till {{ c.valid_to|date:"d M Y" }}{% else %}No expiry{% endif %}{% if c.first_order_only %} · First order only{% endif %}</div>
+      </div>
+      <button type="button" class="code btn" data-copy="{{ c.code }}" title="Copy code">{{ c.code }}</button>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="empty-state"><i class="bi bi-ticket-perforated"></i><p class="text-muted mt-2 mb-0">No active offers right now — subscribe to our newsletter to hear first.</p></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

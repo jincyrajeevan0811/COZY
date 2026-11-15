@@ -1,0 +1,31 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{% if object %}Edit {{ cfg.singular|lower }}{% else %}New {{ cfg.singular|lower }}{% endif %}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div>
+    <a href="{{ list_url }}" class="small text-muted"><i class="bi bi-arrow-left"></i> {{ cfg.title }}</a>
+    <h1>{% if object %}Edit {{ cfg.singular|lower }}{% else %}New {{ cfg.singular|lower }}{% endif %}</h1>
+    {% if object %}<p>{{ object }}</p>{% endif %}
+  </div>
+  {% if delete_url %}<form method="post" action="{{ delete_url }}" data-confirm="Delete “{{ object }}”? This cannot be undone.">{% csrf_token %}<button class="btn btn-d-light text-danger"><i class="bi bi-trash me-1"></i>Delete</button></form>{% endif %}
+</div>
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div class="d-card"><div class="d-card-body">
+    {% for e in form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+    <div class="row gx-4">
+      {% for field in form %}
+      <div class="{% if field.widget_type == 'textarea' or field.widget_type == 'checkboxselectmultiple' or field.widget_type == 'selectmultiple' %}col-12{% elif field.widget_type == 'checkbox' %}col-md-4{% else %}col-md-6{% endif %}">
+        {% if field.widget_type == "clearablefile" and field.value %}<div class="mb-1"><img src="{{ field.value.url }}" alt="" class="table-thumb" style="width:72px;height:72px"></div>{% endif %}
+        {% include "base/_field.html" %}
+      </div>
+      {% endfor %}
+    </div>
+  </div></div>
+  <div class="d-flex gap-2 mt-3">
+    <button class="btn btn-d"><i class="bi bi-check2 me-1"></i>Save</button>
+    {% if cfg.can_create %}<button class="btn btn-d-light" name="save_add" value="1">Save & add another</button>{% endif %}
+    <a href="{{ list_url }}" class="btn btn-link text-muted">Cancel</a>
+  </div>
+</form>
+{% endblock %}

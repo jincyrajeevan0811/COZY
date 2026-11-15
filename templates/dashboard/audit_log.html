@@ -1,0 +1,30 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<div class="page-title"><div><h1>Audit log</h1><p>Every create, update, delete, status change and export performed in the dashboard.</p></div></div>
+<div class="d-card">
+  <div class="d-card-head">
+    <form class="filter-bar" method="get">
+      <input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="Object, description or staff email…">
+      <select name="action" class="form-select" onchange="this.form.submit()"><option value="">All actions</option>{% for v, l in actions %}<option value="{{ v }}" {% if request.GET.action == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <button class="btn btn-d-light"><i class="bi bi-funnel"></i></button>
+    </form>
+  </div>
+  <div class="table-responsive"><table class="table table-d">
+    <thead><tr><th>When</th><th>Staff</th><th>Action</th><th>Object</th><th>Details</th><th>IP</th></tr></thead>
+    <tbody>
+      {% for log in page_obj %}
+      <tr>
+        <td class="small text-nowrap">{{ log.created_at|date:"d M Y, h:i:s A" }}</td>
+        <td class="small">{{ log.user.full_name|default:"—" }}<div class="text-muted">{{ log.user.email }}</div></td>
+        <td><span class="badge badge-soft-light">{{ log.get_action_display }}</span></td>
+        <td class="small">{{ log.object_type }}{% if log.object_repr %}: <strong>{{ log.object_repr }}</strong>{% endif %}</td>
+        <td class="small text-muted">{{ log.description }}</td>
+        <td class="small text-muted">{{ log.ip_address|default:"" }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="6"><div class="empty-d"><i class="bi bi-clock-history"></i>No activity recorded yet.</div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  {% include "dashboard/_pagination.html" %}
+</div>
+{% endblock %}

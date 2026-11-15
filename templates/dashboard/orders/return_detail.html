@@ -1,0 +1,39 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Return · {{ order.order_number }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><a href="{% url 'dashboard:return_list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> Returns</a><h1>Return for {{ order.order_number }}</h1><p>{% status_badge rr.status rr.get_status_display %} · requested {{ rr.created_at|date:"d M Y, h:i A" }}</p></div>
+  <a href="{% url 'dashboard:order_detail' order.order_number %}" class="btn btn-d-light">Open order</a>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="d-card mb-3"><div class="d-card-body">
+      <h5>{{ rr.get_reason_display }}</h5>
+      <p>{{ rr.description|default:"No description provided."|linebreaksbr }}</p>
+      {% if rr.image %}<a href="{{ rr.image.url }}" target="_blank" rel="noopener"><img src="{{ rr.image.url }}" alt="Return photo" style="max-width:260px;border-radius:10px"></a>{% endif %}
+      {% if rr.admin_note %}<hr><div class="small"><strong>Staff notes:</strong><br>{{ rr.admin_note|linebreaksbr }}</div>{% endif %}
+    </div></div>
+    <div class="d-card"><div class="d-card-head"><h5>Items</h5></div>
+      <div class="d-card-body">{% for i in order.items.all %}<div class="mini-stat"><span>{{ i.product_name }}{% if i.variant_name %} ({{ i.variant_name }}){% endif %} × {{ i.quantity }}</span><span>{{ i.line_total|inr }}</span></div>{% endfor %}
+        <div class="mini-stat"><strong>Order total</strong><strong>{{ order.grand_total|inr }}</strong></div>
+        <div class="small text-muted mt-2">{{ order.get_payment_method_display }} · {{ order.get_payment_status_display }} · delivered {{ order.delivered_at|date:"d M Y"|default:"—" }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    {% if rr.status == "requested" or rr.status == "approved" %}
+    <form class="d-card" method="post" data-confirm="Apply this action to the return request?">
+      {% csrf_token %}
+      <div class="d-card-head"><h5>Take action</h5></div>
+      <div class="d-card-body">
+        {% for field in form %}{% include "base/_field.html" %}{% endfor %}
+        <p class="small text-muted">Approve → arrange pickup. Mark received → stock is restored and a pending refund is created for the amount above.</p>
+        <button class="btn btn-d w-100">Submit</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="d-card"><div class="d-card-body small text-muted">This return is {{ rr.get_status_display|lower }}. {% if rr.status == "received" %}<a href="{% url 'dashboard:refund_list' %}?status=pending">Process the refund →</a>{% endif %}</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

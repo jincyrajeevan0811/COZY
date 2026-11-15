@@ -1,0 +1,24 @@
+{% extends "base/base.html" %}
+{% block title %}The COZY Journal | {{ site.site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><span class="eyebrow">Journal</span><h1>Style notes & stories</h1>{% if tag %}<p class="text-muted mb-0">Tagged “{{ tag }}” · <a href="{% url 'site:blog_list' %}">clear</a></p>{% endif %}</div></section>
+<div class="container py-5">
+  <div class="row g-4">
+    {% for post in posts %}
+    <div class="col-md-6 col-lg-4">
+      <a href="{{ post.get_absolute_url }}" class="blog-card text-reset">
+        <div class="cover">{% if post.cover_image %}<img src="{{ post.cover_image.url }}" alt="{{ post.title }}" loading="lazy">{% endif %}</div>
+        <div class="p-4">
+          <small class="text-muted">{{ post.published_at|date:"d M Y" }}</small>
+          <h2 class="h4 mt-1">{{ post.title }}</h2>
+          <p class="small text-muted mb-0">{{ post.excerpt|default:post.content|striptags|truncatechars:140 }}</p>
+        </div>
+      </a>
+    </div>
+    {% empty %}
+    <div class="col-12"><div class="empty-state"><i class="bi bi-journal"></i><p class="text-muted mt-2 mb-0">Stories are coming soon.</p></div></div>
+    {% endfor %}
+  </div>
+  {% include "base/_pagination.html" %}
+</div>
+{% endblock %}

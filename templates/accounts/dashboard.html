@@ -1,0 +1,35 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}My account | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<h1 class="h2 mb-1">Hello, {{ user.get_short_name }} ✨</h1>
+<p class="text-muted mb-4">Here's what's happening with your COZY account.</p>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="stat-tile"><div class="ico"><i class="bi bi-bag"></i></div><div><strong>{{ order_count }}</strong><small>Orders</small></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-tile"><div class="ico"><i class="bi bi-truck"></i></div><div><strong>{{ active_orders }}</strong><small>In progress</small></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-tile"><div class="ico"><i class="bi bi-heart"></i></div><div><strong>{{ wishlist_count }}</strong><small>Wishlist</small></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-tile"><div class="ico"><i class="bi bi-bell"></i></div><div><strong>{{ unread_notifications }}</strong><small>Unread alerts</small></div></div></div>
+</div>
+<div class="card-cozy">
+  <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0">Recent orders</h5><a href="{% url 'orders:list' %}" class="small">View all</a></div>
+  {% for order in recent_orders %}
+  <a href="{{ order.get_absolute_url }}" class="d-flex justify-content-between align-items-center py-3 border-bottom text-reset">
+    <div><div class="fw-medium">{{ order.order_number }}</div><small class="text-muted">{{ order.created_at|date:"d M Y" }} · {{ order.items.all|length }} item{{ order.items.all|length|pluralize }}</small></div>
+    <div class="text-end">{% status_badge order.status order.get_status_display %}<div class="small fw-semibold mt-1">{{ order.grand_total|inr }}</div></div>
+  </a>
+  {% empty %}
+  <p class="text-muted mb-0">You haven't placed any orders yet. <a href="{% url 'products:list' %}">Start shopping</a></p>
+  {% endfor %}
+</div>
+<div class="row g-3 mt-1">
+  <div class="col-md-6"><div class="card-cozy h-100">
+    <h5>Default address</h5>
+    {% if default_address %}<p class="small text-muted mb-2">{{ default_address.full_name }}<br>{{ default_address.one_line }}<br>{{ default_address.phone }}</p><a href="{% url 'accounts:addresses' %}" class="small">Manage addresses</a>
+    {% else %}<p class="small text-muted">No address saved yet.</p><a href="{% url 'accounts:address_create' %}" class="btn btn-light-cozy btn-sm">Add address</a>{% endif %}
+  </div></div>
+  <div class="col-md-6"><div class="card-cozy h-100">
+    <h5>Need help?</h5>
+    <p class="small text-muted">Questions about an order, returns or a product? Our team is happy to help.</p>
+    <a href="{% url 'support:create' %}" class="btn btn-light-cozy btn-sm">Raise a support ticket</a>
+  </div></div>
+</div>
+{% endblock %}

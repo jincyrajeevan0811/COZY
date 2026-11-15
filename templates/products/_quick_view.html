@@ -1,0 +1,49 @@
+<div class="row g-0" data-product-scope>
+  <div class="col-md-6">
+    <div class="pd-gallery" style="position:static;grid-template-columns:1fr">
+      <div class="pd-main" style="border-radius:var(--cz-radius) 0 0 var(--cz-radius)">
+        {% with img=product.primary_image %}
+        {% if img %}<img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}">{% else %}<div class="h-100 d-flex align-items-center justify-content-center bg-champagne"><i class="bi bi-gem display-1 text-rose"></i></div>{% endif %}
+        {% endwith %}
+      </div>
+      {% if product.images.all|length > 1 %}
+      <div class="pd-thumbs flex-row p-2" style="max-height:none">
+        {% for img in product.images.all %}<button type="button" class="{% if forloop.first %}active{% endif %}" style="width:64px;flex:0 0 64px" data-full="{{ img.image.url }}"><img src="{{ img.image.url }}" alt=""></button>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-md-6 p-4 p-lg-5">
+    <span class="eyebrow">{{ product.category.name }}</span>
+    <h2 class="mb-2">{{ product.name }}</h2>
+    {% if product.review_count %}<div class="mb-2">{{ product.avg_rating|stars }} <small class="text-muted">({{ product.review_count }})</small></div>{% endif %}
+    <div class="d-flex align-items-baseline gap-3 mb-3">
+      <span class="pd-price js-price">{{ product.price|inr:"auto" }}</span>
+      <span class="mrp js-mrp">{% if product.discount_percent %}{{ product.original_price|inr:"auto" }}{% endif %}</span>
+    </div>
+    {% if product.short_description %}<p class="text-muted">{{ product.short_description }}</p>{% endif %}
+    {% with stock=product.stock_quantity %}
+    <div class="mb-3">
+      {% if product.has_variants %}<span class="stock-pill js-stock in">Select an option</span>
+      {% elif stock <= 0 %}<span class="stock-pill js-stock out">Out of stock</span>
+      {% elif stock <= 5 %}<span class="stock-pill js-stock low">Only {{ stock }} left</span>
+      {% else %}<span class="stock-pill js-stock in">In stock</span>{% endif %}
+    </div>
+    <form class="js-add-to-cart" method="post" action="{% url 'cart:add' %}" {% if product.has_variants %}data-variants="{{ variants_json }}" data-requires-variant="1"{% endif %}>
+      {% csrf_token %}
+      <input type="hidden" name="product_id" value="{{ product.id }}">
+      <input type="hidden" name="variant_id" value="">
+      {% if variants %}
+      <div class="variant-options mb-3">
+        {% for v in variants %}<input type="radio" name="variant_choice" id="qv{{ v.id }}" value="{{ v.id }}" {% if v.stock <= 0 %}disabled{% endif %}><label for="qv{{ v.id }}">{{ v.name }}</label>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="d-flex gap-2 align-items-center mb-3">
+        <div class="qty-input"><button type="button" data-qty="-">−</button><input type="number" name="quantity" value="1" min="1" max="10"><button type="button" data-qty="+">+</button></div>
+        <button type="submit" class="btn btn-cozy flex-grow-1" {% if stock <= 0 and not product.has_variants %}disabled{% endif %}>Add to bag</button>
+      </div>
+    </form>
+    {% endwith %}
+    <a href="{{ product.get_absolute_url }}" class="btn-link-cozy">View full details <i class="bi bi-arrow-right"></i></a>
+  </div>
+</div>

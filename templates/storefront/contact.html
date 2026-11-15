@@ -1,0 +1,30 @@
+{% extends "base/base.html" %}
+{% block title %}Contact us | {{ site.site_name }}{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container"><span class="eyebrow">We're here for you</span><h1>Contact us</h1></div></section>
+<div class="container py-5">
+  <div class="row g-5">
+    <div class="col-lg-4">
+      <div class="card-cozy">
+        <h5>Get in touch</h5>
+        <ul class="info-list">
+          <li><i class="bi bi-envelope"></i><span>{{ site.contact_email }}</span></li>
+          {% if site.contact_phone %}<li><i class="bi bi-telephone"></i><span>{{ site.contact_phone }}</span></li>{% endif %}
+          {% if site.whatsapp_link %}<li><i class="bi bi-whatsapp"></i><a href="{{ site.whatsapp_link }}" target="_blank" rel="noopener">Chat on WhatsApp</a></li>{% endif %}
+          {% if site.business_hours %}<li><i class="bi bi-clock"></i><span>{{ site.business_hours }}</span></li>{% endif %}
+          {% if site.address %}<li><i class="bi bi-geo-alt"></i><span>{{ site.address|linebreaksbr }}</span></li>{% endif %}
+        </ul>
+        <a href="{% url 'orders:track' %}" class="btn btn-light-cozy w-100 mt-3">Track an order</a>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <form class="card-cozy" method="post" novalidate>
+        {% csrf_token %}
+        <h5 class="mb-3">Send us a message</h5>
+        {% include "base/_form.html" %}
+        <button class="btn btn-cozy">Send message</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

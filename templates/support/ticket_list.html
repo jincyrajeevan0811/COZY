@@ -1,0 +1,18 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}Help & support | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<div class="d-flex justify-content-between align-items-center mb-4"><h1 class="h2 mb-0">Help & support</h1><a href="{% url 'support:create' %}" class="btn btn-cozy btn-sm"><i class="bi bi-plus"></i> New ticket</a></div>
+<div class="table-responsive table-cozy">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Ticket</th><th>Subject</th><th>Updated</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for t in tickets %}
+      <tr><td><a href="{{ t.get_absolute_url }}">{{ t.ticket_number }}</a></td><td>{{ t.subject }}</td><td class="small text-muted">{{ t.updated_at|timesince }} ago</td><td>{% status_badge t.status t.get_status_display %}</td></tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-center text-muted py-4">No tickets yet. We're here if you need us!</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="small text-muted mt-3">Looking for quick answers? Visit our <a href="{% url 'site:faq' %}">FAQs</a>.</p>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base/base.html" %}
+{% block title %}Checkout | {{ site.site_name }}{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h1 class="mb-0">Secure checkout</h1>
+    <a href="{% url 'cart:detail' %}" class="btn-link-cozy"><i class="bi bi-arrow-left"></i> Back to bag</a>
+  </div>
+  <div class="checkout-steps">
+    <div class="step done">Bag</div>
+    <div class="step active">Details & address</div>
+    <div class="step active">Delivery</div>
+    <div class="step active">Payment</div>
+    <div class="step">Confirmation</div>
+  </div>
+
+  <form id="checkoutForm" method="post" data-summary-url="{% url 'orders:checkout_summary' %}" novalidate>
+    {% csrf_token %}
+    <div class="row g-5">
+      <div class="col-lg-8">
+        <!-- 1. Customer -->
+        <div class="checkout-block">
+          <div class="block-title"><span class="num">1</span><h5>Customer information</h5></div>
+          <div class="row g-2 small">
+            <div class="col-md-4"><span class="text-muted d-block">Name</span>{{ user.full_name }}</div>
+            <div class="col-md-5"><span class="text-muted d-block">Email</span>{{ user.email }}{% if not user.email_verified %} <span class="badge badge-soft-warning">unverified</span>{% endif %}</div>
+            <div class="col-md-3"><span class="text-muted d-block">Mobile</span>{{ user.phone|default:"—" }}</div>
+          </div>
+        </div>
+
+        <!-- 2. Address -->
+        <div class="checkout-block">
+          <div class="block-title"><span class="num">2</span><h5>Delivery address</h5></div>
+          <div class="row g-3">
+            {% for a in addresses %}
+            <div class="col-md-6">
+              <label class="address-option h-100">
+                <input type="radio" name="address_id" value="{{ a.id }}" {% if selected_address_id|stringformat:"s" == a.id|stringformat:"s" %}checked{% endif %}>
+                <div class="address-card">
+                  <div class="d-flex justify-content-between"><strong>{{ a.full_name }}</strong><span class="badge badge-soft-light">{{ a.get_address_type_display }}</span></div>
+                  <div class="small text-muted mt-1">{{ a.one_line }}</div>
+                  <div class="small mt-1"><i class="bi bi-telephone me-1"></i>{{ a.phone }}</div>
+                </div>
+              </label>
+            </div>
+            {% endfor %}
+            <div class="col-md-6">
+              <label class="address-option h-100">
+                <input type="radio" name="address_id" value="new" {% if selected_address_id == "new" %}checked{% endif %}>
+                <div class="address-card d-flex align-items-center justify-content-center text-center text-muted"><div><i class="bi bi-plus-circle fs-3 text-rose"></i><div class="mt-1">Add a new address</div></div></div>
+              </label>
+            </div>
+          </div>
+          <div id="newAddressFields" class="row g-3 mt-2 {% if selected_address_id != 'new' %}d-none{% endif %}">
+            {% for field in address_form %}
+            {% if field.name == "is_default" %}
+            <div class="col-12"><div class="form-check">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">Save as my default address</label></div></div>
+            {% else %}
+            <div class="{% if field.name == 'line1' or field.name == 'line2' %}col-12{% else %}col-md-6{% endif %}">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+              {% for e in field.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- 3. Shipping -->
+        <div class="checkout-block">
+          <div class="block-title"><span class="num">3</span><h5>Shipping method</h5></div>
+          {% for m in shipping_methods %}
+          {% with est=delivery|get_item:m.code %}
+          <label class="option-card">
+            <input type="radio" name="shipping_method" value="{{ m.code }}" {% if selected_method.pk == m.pk %}checked{% endif %}>
+            <div class="flex-grow-1">
+              <div class="fw-medium">{{ m.name }}</div>
+              <div class="small text-muted">{{ m.description }}{% if est %} · Arrives {{ est.0|date:"D, d M" }} – {{ est.1|date:"D, d M" }}{% endif %}</div>
+            </div>
+            <div class="fw-semibold">{% if m.charge > 0 %}{{ m.charge|inr:"auto" }}{% else %}FREE{% endif %}</div>
+          </label>
+          {% endwith %}
+          {% empty %}
+          <p class="text-danger small mb-0">No shipping methods are configured yet.</p>
+          {% endfor %}
+          {% if site_settings.free_shipping_threshold %}<p class="small text-muted mb-0 mt-2"><i class="bi bi-info-circle"></i> Standard shipping is free above {{ site_settings.free_shipping_threshold|inr:"auto" }}.</p>{% endif %}
+        </div>
+
+        <!-- 4. Coupon -->
+        <div class="checkout-block">
+          <div class="block-title"><span class="num">4</span><h5>Offers & gifting</h5></div>
+          {% if summary.coupon %}
+          <div class="d-flex justify-content-between align-items-center bg-ivory rounded p-3">
+            <span><i class="bi bi-ticket-perforated text-rose me-1"></i><strong>{{ summary.coupon.code }}</strong> — you save {{ summary.coupon_discount|inr }}</span>
+            <button type="submit" form="removeCouponForm" class="btn btn-link btn-sm text-muted p-0">Remove</button>
+          </div>
+          {% else %}
+          <div class="input-group" style="max-width:420px">
+            <input type="text" name="code" form="couponForm" class="form-control text-uppercase" placeholder="Enter coupon code" aria-label="Coupon code">
+            <button type="submit" form="couponForm" class="btn btn-cozy">Apply</button>
+          </div>
+          {% endif %}
+          {% if cart.gift_wrap %}<p class="small mt-3 mb-0"><i class="bi bi-gift text-rose"></i> Gift wrap added{% if cart.gift_message %} — “{{ cart.gift_message }}”{% endif %}. <a href="{% url 'cart:detail' %}">Change</a></p>{% elif site_settings.gift_wrap_enabled %}<p class="small mt-3 mb-0"><a href="{% url 'cart:detail' %}"><i class="bi bi-gift"></i> Add gift wrap</a></p>{% endif %}
+        </div>
+
+        <!-- 5. Payment -->
+        <div class="checkout-block">
+          <div class="block-title"><span class="num">5</span><h5>Payment method</h5></div>
+          <label class="option-card {% if not razorpay_ready %}disabled{% endif %}">
+            <input type="radio" name="payment_method" value="razorpay" {% if razorpay_ready %}checked{% else %}disabled{% endif %}>
+            <div class="flex-grow-1"><div class="fw-medium">Pay online</div><div class="small text-muted">UPI, credit / debit cards, net banking & wallets via Razorpay{% if not razorpay_ready %} — currently unavailable{% endif %}</div></div>
+            <i class="bi bi-shield-lock fs-4 text-rose"></i>
+          </label>
+          {% if site_settings.cod_enabled %}
+          <label class="option-card">
+            <input type="radio" name="payment_method" value="cod" {% if not razorpay_ready %}checked{% endif %}>
+            <div class="flex-grow-1"><div class="fw-medium">Cash on Delivery</div><div class="small text-muted">Pay when your order arrives{% if site_settings.cod_extra_charge > 0 %} (+{{ site_settings.cod_extra_charge|inr:"auto" }} handling){% endif %}. Available up to {{ site_settings.cod_max_order_value|inr:"auto" }}.</div></div>
+            <i class="bi bi-cash-coin fs-4 text-rose"></i>
+          </label>
+          {% endif %}
+          <div class="mt-3">
+            <label class="form-label" for="note">Order note (optional)</label>
+            <textarea class="form-control" name="note" id="note" rows="2" maxlength="500" placeholder="Delivery instructions, landmark…"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="col-lg-4">
+        <div class="summary-card">
+          <h5 class="mb-3">Order summary</h5>
+          {% for item in summary.items %}
+          <div class="d-flex gap-3 align-items-center mb-3">
+            <div class="position-relative">
+              {% with img=item.product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="" style="width:56px;height:68px;object-fit:cover;border-radius:8px">{% endif %}{% endwith %}
+              <span class="badge-count" style="top:-6px;right:-8px">{{ item.quantity }}</span>
+            </div>
+            <div class="flex-grow-1 small"><div class="fw-medium">{{ item.product.name }}</div>{% if item.variant %}<div class="text-muted">{{ item.variant.name }}</div>{% endif %}</div>
+            <div class="small fw-semibold">{{ item.line_total|inr:"auto" }}</div>
+          </div>
+          {% endfor %}
+          <hr>
+          <div class="summary-row"><span>Subtotal</span><span data-sum="subtotal">{{ summary.subtotal|inr }}</span></div>
+          <div class="summary-row {% if not summary.coupon_discount %}d-none{% endif %}" data-optional><span>Coupon</span><span class="save" data-sum="coupon_discount">−{{ summary.coupon_discount|inr }}</span></div>
+          <div class="summary-row"><span>Shipping</span><span data-sum="shipping">{% if summary.shipping > 0 %}{{ summary.shipping|inr }}{% else %}FREE{% endif %}</span></div>
+          <div class="summary-row {% if not summary.gift_wrap_charge %}d-none{% endif %}" data-optional><span>Gift wrap</span><span data-sum="gift_wrap_charge">{{ summary.gift_wrap_charge|inr }}</span></div>
+          <div class="summary-row {% if not summary.cod_charge %}d-none{% endif %}" data-optional><span>COD charge</span><span data-sum="cod_charge">{{ summary.cod_charge|inr }}</span></div>
+          <div class="summary-row"><span>GST{% if summary.tax_inclusive %} (included){% endif %}</span><span data-sum="tax">{{ summary.tax|inr }}</span></div>
+          <div class="summary-row total"><span>Total</span><span data-sum="grand_total">{{ summary.grand_total|inr }}</span></div>
+          <div id="checkoutErrors" class="mt-2"></div>
+          <button type="submit" id="placeOrderBtn" class="btn btn-cozy w-100 mt-3"><i class="bi bi-lock me-2"></i><span id="placeOrderLabel">Continue to payment</span></button>
+          <p class="small text-muted text-center mt-3 mb-0">By placing your order you agree to our terms and return policy. Card and UPI details are handled securely by Razorpay — we never store them.</p>
+        </div>
+      </div>
+    </div>
+  </form>
+  <form id="couponForm" method="post" action="{% url 'cart:apply_coupon' %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'orders:checkout' %}"></form>
+  <form id="removeCouponForm" method="post" action="{% url 'cart:remove_coupon' %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'orders:checkout' %}"></form>
+</div>
+{% endblock %}

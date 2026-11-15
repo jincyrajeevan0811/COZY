@@ -1,0 +1,134 @@
+{% load static dashboard_tags %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Dashboard{% endblock %} · {{ site.site_name }} Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="dash">
+{% with u=request.user %}
+<div class="dash-layout">
+  <aside class="dash-sidebar" aria-label="Dashboard navigation">
+    <a href="{% url 'dashboard:home' %}" class="brand">{{ site.site_name|upper }}<small>ADMIN STUDIO</small></a>
+    <nav>
+      {% if u|can:"dashboard.view" %}<a class="nav-link {% active 'home' %}" href="{% url 'dashboard:home' %}"><i class="bi bi-speedometer2"></i>Overview</a>{% endif %}
+
+      {% if u|can:"orders.view" or u|can:"returns.manage" or u|can:"payments.view" %}<div class="nav-section">Sales</div>{% endif %}
+      {% if u|can:"orders.view" %}<a class="nav-link {% active 'order_' %}" href="{% url 'dashboard:order_list' %}"><i class="bi bi-bag-check"></i>Orders</a>{% endif %}
+      {% if u|can:"returns.manage" %}<a class="nav-link {% active 'return_' %}" href="{% url 'dashboard:return_list' %}"><i class="bi bi-arrow-counterclockwise"></i>Returns</a>{% endif %}
+      {% if u|can:"refunds.manage" or u|can:"payments.view" %}<a class="nav-link {% active 'refund_' %}" href="{% url 'dashboard:refund_list' %}"><i class="bi bi-cash-stack"></i>Refunds</a>{% endif %}
+      {% if u|can:"payments.view" %}<a class="nav-link {% active 'payment_' %}" href="{% url 'dashboard:payment_list' %}"><i class="bi bi-credit-card"></i>Payments</a>{% endif %}
+      {% if u|can:"orders.manage" or u|can:"customers.view" %}<a class="nav-link {% active 'abandoned' %}" href="{% url 'dashboard:abandoned_carts' %}"><i class="bi bi-cart-x"></i>Abandoned carts</a>{% endif %}
+
+      {% if u|can:"products.manage" or u|can:"categories.manage" or u|can:"inventory.view" or u|can:"inventory.manage" %}<div class="nav-section">Catalogue</div>{% endif %}
+      {% if u|can:"products.manage" or u|can:"inventory.view" %}<a class="nav-link {% active 'product_' %}" href="{% url 'dashboard:product_list' %}"><i class="bi bi-gem"></i>Products</a>{% endif %}
+      {% if u|can:"categories.manage" %}
+      <a class="nav-link {% active 'category_' %}" href="{% url 'dashboard:category_list' %}"><i class="bi bi-grid-3x3-gap"></i>Categories</a>
+      <a class="nav-link {% active 'subcategory_' %}" href="{% url 'dashboard:subcategory_list' %}"><i class="bi bi-diagram-3"></i>Sub categories</a>
+      <a class="nav-link {% active 'attribute_' %}" href="{% url 'dashboard:attribute_list' %}"><i class="bi bi-palette"></i>Attributes</a>
+      {% endif %}
+      {% if u|can:"inventory.view" or u|can:"inventory.manage" %}<a class="nav-link {% active 'inventory_' 'stock_' %}" href="{% url 'dashboard:inventory_list' %}"><i class="bi bi-box-seam"></i>Inventory</a>{% endif %}
+      {% if u|can:"reviews.manage" %}<a class="nav-link {% active 'review_' %}" href="{% url 'dashboard:review_list' %}"><i class="bi bi-star"></i>Reviews</a>{% endif %}
+
+      {% if u|can:"customers.view" or u|can:"support.manage" %}<div class="nav-section">Customers</div>{% endif %}
+      {% if u|can:"customers.view" %}<a class="nav-link {% active 'customer_' %}" href="{% url 'dashboard:customer_list' %}"><i class="bi bi-people"></i>Customers</a>{% endif %}
+      {% if u|can:"support.manage" %}<a class="nav-link {% active 'ticket_' %}" href="{% url 'dashboard:ticket_list' %}"><i class="bi bi-headset"></i>Support tickets</a>{% endif %}
+
+      {% if u|can:"coupons.manage" or u|can:"content.manage" or u|can:"newsletter.manage" %}<div class="nav-section">Marketing & content</div>{% endif %}
+      {% if u|can:"coupons.manage" %}<a class="nav-link {% active 'coupon_' %}" href="{% url 'dashboard:coupon_list' %}"><i class="bi bi-ticket-perforated"></i>Coupons</a>{% endif %}
+      {% if u|can:"content.manage" %}
+      <a class="nav-link {% active 'homesection_' %}" href="{% url 'dashboard:homesection_list' %}"><i class="bi bi-layout-text-window"></i>Homepage</a>
+      <a class="nav-link {% active 'banner_' %}" href="{% url 'dashboard:banner_list' %}"><i class="bi bi-images"></i>Banners</a>
+      <a class="nav-link {% active 'page_' %}" href="{% url 'dashboard:page_list' %}"><i class="bi bi-file-earmark-text"></i>Pages</a>
+      <a class="nav-link {% active 'blog_' %}" href="{% url 'dashboard:blog_list' %}"><i class="bi bi-journal-richtext"></i>Blog</a>
+      <a class="nav-link {% active 'testimonial_' %}" href="{% url 'dashboard:testimonial_list' %}"><i class="bi bi-chat-quote"></i>Testimonials</a>
+      <a class="nav-link {% active 'faq_' %}" href="{% url 'dashboard:faq_list' %}"><i class="bi bi-question-circle"></i>FAQs</a>
+      <a class="nav-link {% active 'instagram_' %}" href="{% url 'dashboard:instagram_list' %}"><i class="bi bi-instagram"></i>Social gallery</a>
+      {% endif %}
+      {% if u|can:"newsletter.manage" %}<a class="nav-link {% active 'newsletter_' %}" href="{% url 'dashboard:newsletter_list' %}"><i class="bi bi-envelope-heart"></i>Newsletter</a>{% endif %}
+
+      {% if u|can:"shipping.manage" %}
+      <div class="nav-section">Shipping</div>
+      <a class="nav-link {% active 'shippingmethod_' %}" href="{% url 'dashboard:shippingmethod_list' %}"><i class="bi bi-truck"></i>Shipping methods</a>
+      <a class="nav-link {% active 'pincode_' %}" href="{% url 'dashboard:pincode_list' %}"><i class="bi bi-geo-alt"></i>PIN codes</a>
+      <a class="nav-link {% active 'provider_' %}" href="{% url 'dashboard:provider_list' %}"><i class="bi bi-box2-heart"></i>Courier partners</a>
+      {% endif %}
+
+      {% if u|can:"reports.view" or u|can:"inventory.view" %}<div class="nav-section">Insights</div><a class="nav-link {% active 'report' %}" href="{% url 'dashboard:reports' %}"><i class="bi bi-graph-up-arrow"></i>Reports</a>{% endif %}
+
+      {% if u|can:"users.manage" or u|can:"settings.manage" or u|can:"audit.view" or u.is_super_admin %}<div class="nav-section">Administration</div>{% endif %}
+      {% if u|can:"users.manage" %}<a class="nav-link {% active 'staff_' %}" href="{% url 'dashboard:staff_list' %}"><i class="bi bi-person-badge"></i>Staff users</a>{% endif %}
+      {% if u.is_super_admin %}<a class="nav-link {% active 'role_' %}" href="{% url 'dashboard:role_list' %}"><i class="bi bi-shield-lock"></i>Roles & permissions</a>{% endif %}
+      {% if u|can:"settings.manage" %}<a class="nav-link {% active 'settings' %}" href="{% url 'dashboard:settings' %}"><i class="bi bi-sliders"></i>Website settings</a>{% endif %}
+      {% if u|can:"audit.view" %}<a class="nav-link {% active 'audit' %}" href="{% url 'dashboard:audit_log' %}"><i class="bi bi-clock-history"></i>Audit log</a>{% endif %}
+      <div class="nav-section">Storefront</div>
+      <a class="nav-link" href="{% url 'home' %}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i>View store</a>
+      <div class="pb-4"></div>
+    </nav>
+  </aside>
+  <div class="sidebar-backdrop"></div>
+
+  <div class="dash-main">
+    <header class="dash-topbar">
+      <button class="btn btn-d-light btn-icon d-lg-none" data-sidebar-toggle aria-label="Menu"><i class="bi bi-list"></i></button>
+      {% if u|can:"orders.view" %}
+      <form class="search d-none d-md-block" action="{% url 'dashboard:order_list' %}" method="get"><i class="bi bi-search"></i><input class="form-control" name="q" placeholder="Search orders, customers, AWB…" aria-label="Search orders"></form>
+      {% endif %}
+      <div class="ms-auto d-flex align-items-center gap-2">
+        {% staff_unread as unread %}
+        <div class="dropdown">
+          <button class="icon-btn" data-bs-toggle="dropdown" aria-label="Notifications"><i class="bi bi-bell"></i>{% if unread %}<span class="dot">{{ unread }}</span>{% endif %}</button>
+          <div class="dropdown-menu dropdown-menu-end p-0 shadow border-0" style="width:340px">
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom"><strong class="small">Notifications</strong><a href="{% url 'dashboard:notifications' %}" class="small">View all</a></div>
+            {% staff_alerts 6 as alerts %}
+            {% for n in alerts %}
+            <a href="{% url 'notifications:open' n.id %}" class="notif-item {% if not n.is_read %}unread{% endif %}"><i class="bi {{ n.icon }}"></i><div><div class="small fw-medium">{{ n.title }}</div><div class="small text-muted">{{ n.message|truncatechars:70 }}</div><div class="small text-muted">{{ n.created_at|timesince }} ago</div></div></a>
+            {% empty %}<div class="p-4 text-center small text-muted">No notifications</div>{% endfor %}
+          </div>
+        </div>
+        <div class="dropdown">
+          <button class="btn p-0 border-0 d-flex align-items-center gap-2" data-bs-toggle="dropdown"><span class="dash-avatar">{{ u.first_name|first|upper }}</span><span class="d-none d-md-inline text-start small lh-sm"><strong>{{ u.full_name }}</strong><br><span class="text-muted">{{ u.role.name|default:"Super Admin" }}</span></span></button>
+          <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-2"></i>My profile</a></li>
+            <li><a class="dropdown-item" href="{% url 'accounts:change_password' %}"><i class="bi bi-key me-2"></i>Change password</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i>Sign out</button></form></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+      {% for message in messages %}
+      <div class="toast toast-d {{ message.tags }}" role="status" data-autoshow><div class="toast-body d-flex gap-2 align-items-center"><i class="bi {% if message.tags == 'success' %}bi-check-circle text-success{% elif message.tags == 'danger' %}bi-exclamation-circle text-danger{% else %}bi-info-circle{% endif %}"></i><div class="flex-grow-1">{{ message }}</div><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button></div></div>
+      {% endfor %}
+    </div>
+
+    <main class="dash-content">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content border-0" style="border-radius:14px">
+    <div class="modal-body p-4 text-center">
+      <i class="bi bi-exclamation-triangle text-warning fs-1"></i>
+      <p class="confirm-text mt-2 mb-4"></p>
+      <div class="d-flex gap-2 justify-content-center"><button class="btn btn-d-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-d-rose confirm-ok">Confirm</button></div>
+    </div>
+  </div></div>
+</div>
+{% endwith %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block chart_js %}{% endblock %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

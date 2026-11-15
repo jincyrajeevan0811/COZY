@@ -1,0 +1,5 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<div class="d-card"><div class="empty-d"><i class="bi bi-shield-lock"></i><h2 class="h4 text-dark">Welcome, {{ request.user.get_short_name }}</h2><p>Your role doesn't include the overview dashboard. Use the menu on the left to open the modules you can access.</p></div></div>
+{% endblock %}

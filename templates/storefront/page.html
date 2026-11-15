@@ -1,0 +1,14 @@
+{% extends "base/base.html" %}
+{% block title %}{{ page.meta_title|default:page.title }} | {{ site.site_name }}{% endblock %}
+{% block meta_description %}{{ page.meta_description|default:page.content|striptags|truncatechars:155 }}{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="container">
+  <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li><li class="breadcrumb-item active">{{ page.title }}</li></ol></nav>
+  <h1 class="mt-2">{{ page.title }}</h1>
+</div></section>
+<div class="container py-5" style="max-width:860px">
+  {# Page HTML is authored only by staff with the content.manage permission. #}
+  <article class="prose">{{ page.content|safe }}</article>
+  <p class="small text-muted mt-5">Last updated {{ page.updated_at|date:"d M Y" }}</p>
+</div>
+{% endblock %}

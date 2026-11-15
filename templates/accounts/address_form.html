@@ -1,0 +1,11 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}{% if address %}Edit{% else %}Add{% endif %} address | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<h1 class="h2 mb-4">{% if address %}Edit address{% else %}Add a new address{% endif %}</h1>
+<form class="card-cozy" method="post" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {% include "base/_form.html" %}
+  <div class="d-flex gap-2"><button class="btn btn-cozy">Save address</button><a href="{% url 'accounts:addresses' %}" class="btn btn-light-cozy">Cancel</a></div>
+</form>
+{% endblock %}

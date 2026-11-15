@@ -1,0 +1,39 @@
+{% extends "base/base.html" %}
+{% block content %}
+<div class="container py-5">
+  <div class="row g-4">
+    <aside class="col-lg-3">
+      <nav class="account-nav" aria-label="Account">
+        <div class="account-user">
+          <div class="avatar">{% if user.avatar_url %}<img src="{{ user.avatar_url }}" alt="">{% else %}{{ user.first_name|first|upper }}{% endif %}</div>
+          <div><div class="fw-medium">{{ user.full_name }}</div><small class="text-muted">{{ user.email }}</small></div>
+        </div>
+        {% with name=request.resolver_match.url_name ns=request.resolver_match.namespace %}
+        <a href="{% url 'accounts:dashboard' %}" class="{% if ns == 'accounts' and name == 'dashboard' %}active{% endif %}"><i class="bi bi-grid"></i>Overview</a>
+        <a href="{% url 'orders:list' %}" class="{% if ns == 'orders' and name != 'returns' %}active{% endif %}"><i class="bi bi-bag"></i>My orders</a>
+        <a href="{% url 'orders:returns' %}" class="{% if name == 'returns' %}active{% endif %}"><i class="bi bi-arrow-counterclockwise"></i>Returns & cancellations</a>
+        <a href="{% url 'wishlist:detail' %}" class="{% if ns == 'wishlist' %}active{% endif %}"><i class="bi bi-heart"></i>Wishlist</a>
+        <a href="{% url 'accounts:addresses' %}" class="{% if 'address' in name %}active{% endif %}"><i class="bi bi-geo-alt"></i>Addresses</a>
+        <a href="{% url 'accounts:offers' %}" class="{% if name == 'offers' %}active{% endif %}"><i class="bi bi-ticket-perforated"></i>Coupons & offers</a>
+        <a href="{% url 'accounts:payments' %}" class="{% if name == 'payments' %}active{% endif %}"><i class="bi bi-credit-card"></i>Payment history</a>
+        <a href="{% url 'accounts:reviews' %}" class="{% if name == 'reviews' %}active{% endif %}"><i class="bi bi-star"></i>My reviews</a>
+        <a href="{% url 'notifications:list' %}" class="{% if ns == 'notifications' %}active{% endif %}"><i class="bi bi-bell"></i>Notifications{% if unread_notifications %}<span class="badge bg-danger rounded-pill ms-auto">{{ unread_notifications }}</span>{% endif %}</a>
+        <a href="{% url 'support:list' %}" class="{% if ns == 'support' %}active{% endif %}"><i class="bi bi-headset"></i>Help & support</a>
+        <a href="{% url 'accounts:profile' %}" class="{% if name == 'profile' %}active{% endif %}"><i class="bi bi-person"></i>Profile</a>
+        <a href="{% url 'accounts:change_password' %}" class="{% if name == 'change_password' %}active{% endif %}"><i class="bi bi-key"></i>Change password</a>
+        {% endwith %}
+        <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit"><i class="bi bi-box-arrow-right"></i>Sign out</button></form>
+      </nav>
+    </aside>
+    <div class="col-lg-9">
+      {% if not user.email_verified %}
+      <div class="card-cozy py-3 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span class="small"><i class="bi bi-envelope-exclamation text-rose me-1"></i>Please verify your email address to secure your account.</span>
+        <form method="post" action="{% url 'accounts:resend_verification' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-light-cozy btn-sm">Resend link</button></form>
+      </div>
+      {% endif %}
+      {% block account_content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

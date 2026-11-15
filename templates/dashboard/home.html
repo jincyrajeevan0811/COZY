@@ -1,0 +1,109 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_tags %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Good to see you, {{ request.user.get_short_name }}</h1><p>Here's how {{ site.site_name }} is performing today — {% now "l, d F Y" %}.</p></div>
+  <div class="d-flex gap-2">
+    {% if request.user|can:"products.manage" %}<a href="{% url 'dashboard:product_create' %}" class="btn btn-d"><i class="bi bi-plus-lg me-1"></i>Add product</a>{% endif %}
+    {% if request.user|can:"reports.view" %}<a href="{% url 'dashboard:reports' %}" class="btn btn-d-light"><i class="bi bi-graph-up me-1"></i>Reports</a>{% endif %}
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-sm-6 col-xl-3"><div class="d-card kpi"><div class="ico rose"><i class="bi bi-currency-rupee"></i></div><div><div class="label">Total revenue</div><div class="value">{{ stats.total_revenue|inr:"auto" }}</div><div class="small text-muted">net of refunds</div></div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="d-card kpi"><div class="ico gold"><i class="bi bi-calendar-check"></i></div><div><div class="label">This month</div><div class="value">{{ stats.month_sales|inr:"auto" }}</div>{% if stats.month_growth is not None %}<div class="trend {% if stats.month_growth >= 0 %}up{% else %}down{% endif %}"><i class="bi bi-arrow-{% if stats.month_growth >= 0 %}up{% else %}down{% endif %}-right"></i> {{ stats.month_growth }}% vs last month</div>{% endif %}</div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="d-card kpi"><div class="ico green"><i class="bi bi-lightning-charge"></i></div><div><div class="label">Today's sales</div><div class="value">{{ stats.today_sales|inr:"auto" }}</div><div class="small text-muted">{{ stats.today_orders }} order{{ stats.today_orders|pluralize }} today</div></div></div></div>
+  <div class="col-sm-6 col-xl-3"><div class="d-card kpi"><div class="ico blue"><i class="bi bi-people"></i></div><div><div class="label">Customers</div><div class="value">{{ stats.total_customers }}</div><div class="small text-muted">{{ stats.active_customers }} active (90 days)</div></div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-4 col-xl-2"><a href="{% url 'dashboard:order_list' %}" class="d-card kpi text-reset"><div><div class="label">Total orders</div><div class="value">{{ stats.total_orders }}</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl-2"><a href="{% url 'dashboard:order_list' %}?status=pending" class="d-card kpi text-reset"><div><div class="label">Pending</div><div class="value text-warning">{{ stats.pending_orders }}</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl-2"><a href="{% url 'dashboard:order_list' %}?status=processing" class="d-card kpi text-reset"><div><div class="label">Processing</div><div class="value">{{ stats.processing_orders }}</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl-2"><a href="{% url 'dashboard:order_list' %}?status=delivered" class="d-card kpi text-reset"><div><div class="label">Delivered</div><div class="value text-success">{{ stats.delivered_orders }}</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl-2"><a href="{% url 'dashboard:order_list' %}?status=cancelled" class="d-card kpi text-reset"><div><div class="label">Cancelled</div><div class="value text-danger">{{ stats.cancelled_orders }}</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl-2"><a href="{% url 'dashboard:return_list' %}" class="d-card kpi text-reset"><div><div class="label">Return requests</div><div class="value">{{ stats.return_requests }}</div></div></a></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-xl-8">
+    <div class="d-card h-100">
+      <div class="d-card-head">
+        <h5>Sales & orders</h5>
+        <div class="btn-group period-switch" role="group">
+          <button class="btn btn-d-light active" data-period="daily">Daily</button>
+          <button class="btn btn-d-light" data-period="weekly">Weekly</button>
+          <button class="btn btn-d-light" data-period="monthly">Monthly</button>
+          <button class="btn btn-d-light" data-period="yearly">Yearly</button>
+        </div>
+      </div>
+      <div class="d-card-body"><div class="chart-wrap"><canvas id="salesChart" data-url="{% url 'dashboard:chart_data' %}"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="d-card h-100">
+      <div class="d-card-head"><h5>Order status</h5></div>
+      <div class="d-card-body"><div class="chart-wrap"><canvas id="statusChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6"><div class="d-card h-100"><div class="d-card-head"><h5>Top categories by revenue</h5></div><div class="d-card-body"><div class="chart-wrap sm"><canvas id="categoryChart"></canvas></div></div></div></div>
+  <div class="col-lg-6"><div class="d-card h-100"><div class="d-card-head"><h5>Best-performing products (units)</h5></div><div class="d-card-body"><div class="chart-wrap sm"><canvas id="productChart"></canvas></div></div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="d-card">
+      <div class="d-card-head"><h5>Recent orders</h5><a href="{% url 'dashboard:order_list' %}" class="small">View all</a></div>
+      <div class="table-responsive">
+        <table class="table table-d">
+          <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th>Payment</th><th>Status</th><th class="text-end">Total</th></tr></thead>
+          <tbody>
+            {% for o in recent_orders %}
+            <tr>
+              <td><a href="{% url 'dashboard:order_detail' o.order_number %}" class="fw-medium">{{ o.order_number }}</a></td>
+              <td>{{ o.full_name }}<div class="small text-muted">{{ o.city }}</div></td>
+              <td class="small">{{ o.created_at|date:"d M, h:i A" }}</td>
+              <td>{% status_badge o.payment_status o.get_payment_status_display %}<div class="small text-muted">{{ o.get_payment_method_display }}</div></td>
+              <td>{% status_badge o.status o.get_status_display %}</td>
+              <td class="text-end fw-medium">{{ o.grand_total|inr }}</td>
+            </tr>
+            {% empty %}<tr><td colspan="6"><div class="empty-d"><i class="bi bi-bag"></i>No orders yet.</div></td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="d-card mb-3">
+      <div class="d-card-head"><h5>Catalogue health</h5><a href="{% url 'dashboard:inventory_list' %}" class="small">Inventory</a></div>
+      <div class="d-card-body py-2">
+        <div class="mini-stat"><span>Total products</span><strong>{{ stats.total_products }}</strong></div>
+        <div class="mini-stat"><span>Active products</span><strong>{{ stats.active_products }}</strong></div>
+        <div class="mini-stat"><span>Categories</span><strong>{{ stats.total_categories }}</strong></div>
+        <div class="mini-stat"><span>Low stock</span><a href="{% url 'dashboard:inventory_list' %}?level=low" class="fw-semibold text-warning">{{ stats.low_stock }}</a></div>
+        <div class="mini-stat"><span>Out of stock</span><a href="{% url 'dashboard:inventory_list' %}?level=out" class="fw-semibold text-danger">{{ stats.out_of_stock }}</a></div>
+        <div class="mini-stat"><span>Pending refunds</span><a href="{% url 'dashboard:refund_list' %}?status=pending" class="fw-semibold">{{ stats.pending_refunds }}</a></div>
+      </div>
+    </div>
+    <div class="d-card mb-3">
+      <div class="d-card-head"><h5>Best sellers</h5></div>
+      <div class="d-card-body py-2">
+        {% for b in best_sellers %}<div class="mini-stat"><span class="text-truncate me-2">{{ b.product_name }}</span><span class="text-nowrap"><strong>{{ b.qty }}</strong> <small class="text-muted">· {{ b.revenue|inr:"auto" }}</small></span></div>
+        {% empty %}<div class="empty-d py-3">No sales yet</div>{% endfor %}
+      </div>
+    </div>
+    <div class="d-card">
+      <div class="d-card-head"><h5>New customers</h5>{% if request.user|can:"customers.view" %}<a href="{% url 'dashboard:customer_list' %}" class="small">All</a>{% endif %}</div>
+      <div class="d-card-body py-2">
+        {% for c in recent_customers %}<div class="mini-stat"><span>{% if request.user|can:"customers.view" %}<a href="{% url 'dashboard:customer_detail' c.pk %}">{{ c.full_name }}</a>{% else %}{{ c.full_name }}{% endif %}<div class="small text-muted">{{ c.email }}</div></span><small class="text-muted">{{ c.date_joined|date:"d M" }}</small></div>
+        {% empty %}<div class="empty-d py-3">No customers yet</div>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block chart_js %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>{% endblock %}

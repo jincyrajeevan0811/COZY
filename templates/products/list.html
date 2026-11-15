@@ -1,0 +1,143 @@
+{% extends "base/base.html" %}
+{% block title %}{% if category %}{{ category.meta_title|default:category.name }}{% else %}{{ title }}{% endif %} | {{ site.site_name }}{% endblock %}
+{% block meta_description %}{% if category and category.meta_description %}{{ category.meta_description }}{% elif description %}{{ description|truncatechars:155 }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block content %}
+<section class="page-hero {% if category.banner_image %}with-image{% endif %}">
+  {% if category.banner_image %}<img src="{{ category.banner_image.url }}" alt="">{% endif %}
+  <div class="container">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'products:list' %}">Shop</a></li>
+      {% if category %}<li class="breadcrumb-item active">{{ category.name }}</li>{% elif collection or is_search %}<li class="breadcrumb-item active">{{ title }}</li>{% endif %}
+    </ol></nav>
+    <h1 class="mt-2">{{ title }}</h1>
+    {% if description %}<p class="text-muted mx-auto mb-0" style="max-width:640px">{{ description }}</p>{% endif %}
+    {% if subcategories %}
+    <div class="sub-pills">
+      <a href="{{ category.get_absolute_url }}" class="{% if not active_filters.sub %}active{% endif %}">All</a>
+      {% for sub in subcategories %}<a href="{% url_replace sub=sub.slug %}" class="{% if active_filters.sub == sub.slug %}active{% endif %}">{{ sub.name }}</a>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="container py-5">
+  <div class="row g-4">
+    <aside class="col-lg-3">
+      <button class="btn btn-light-cozy w-100 d-lg-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#filters"><i class="bi bi-sliders me-2"></i>Filters</button>
+      <form id="filters" class="filters-sidebar collapse d-lg-block" method="get">
+        {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+        {% if active_filters.sub %}<input type="hidden" name="sub" value="{{ active_filters.sub }}">{% endif %}
+        {% if collection %}<input type="hidden" name="flag" value="{{ active_filters.flag }}">{% endif %}
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong class="small-caps">Filter by</strong>
+          <a href="{{ request.path }}{% if query %}?q={{ query|urlencode }}{% endif %}" class="small text-muted">Clear all</a>
+        </div>
+        {% if not category %}
+        <div class="filter-group">
+          <h6>Category</h6>
+          {% for c in all_categories %}
+          <div class="form-check"><input class="form-check-input" type="radio" name="category" id="cat-{{ c.slug }}" value="{{ c.slug }}" {% if active_filters.category == c.slug %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="cat-{{ c.slug }}">{{ c.name }}</label></div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="filter-group">
+          <h6>Price</h6>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="number" class="form-control form-control-sm" name="min_price" min="0" placeholder="Min {{ price_range.lo|default:0|floatformat:0 }}" value="{{ active_filters.min_price|default:'' }}">
+            <span>–</span>
+            <input type="number" class="form-control form-control-sm" name="max_price" min="0" placeholder="Max {{ price_range.hi|default:0|floatformat:0 }}" value="{{ active_filters.max_price|default:'' }}">
+          </div>
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            <a class="chip" href="{% url_replace min_price='' max_price=499 %}">Under ₹499</a>
+            <a class="chip" href="{% url_replace min_price=500 max_price=999 %}">₹500–999</a>
+            <a class="chip" href="{% url_replace min_price=1000 max_price='' %}">₹1000+</a>
+          </div>
+        </div>
+        {% if colors %}
+        <div class="filter-group">
+          <h6>Colour</h6>
+          {% for c in colors %}
+          <label class="swatch-option" title="{{ c.value }}"><input type="checkbox" name="color" value="{{ c.slug }}" {% if c.slug in active_filters.color %}checked{% endif %} onchange="this.form.submit()"><span class="sw" style="background:{{ c.color_code|default:'#ddd' }}"></span>{{ c.value }}</label>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if materials %}
+        <div class="filter-group">
+          <h6>Material</h6>
+          {% for m in materials %}
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="material" id="mat-{{ m.slug }}" value="{{ m.slug }}" {% if m.slug in active_filters.material %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="mat-{{ m.slug }}">{{ m.value }}</label></div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if styles %}
+        <div class="filter-group">
+          <h6>Style</h6>
+          {% for st in styles %}
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="style" id="sty-{{ st.slug }}" value="{{ st.slug }}" {% if st.slug in active_filters.style %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="sty-{{ st.slug }}">{{ st.value }}</label></div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="filter-group">
+          <h6>Discount</h6>
+          {% for d in discount_options %}
+          <div class="form-check"><input class="form-check-input" type="radio" name="discount" id="disc-{{ d }}" value="{{ d }}" {% if active_filters.discount|stringformat:"s" == d|stringformat:"s" %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="disc-{{ d }}">{{ d }}% and above</label></div>
+          {% endfor %}
+        </div>
+        {% if not collection %}
+        <div class="filter-group">
+          <h6>Collections</h6>
+          <div class="form-check"><input class="form-check-input" type="radio" name="flag" id="flag-new" value="new" {% if active_filters.flag == "new" %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="flag-new">New arrivals</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="flag" id="flag-best" value="bestseller" {% if active_filters.flag == "bestseller" %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="flag-best">Best sellers</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="flag" id="flag-trend" value="trending" {% if active_filters.flag == "trending" %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="flag-trend">Trending</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="flag" id="flag-sale" value="sale" {% if active_filters.flag == "sale" %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="flag-sale">On sale</label></div>
+        </div>
+        {% endif %}
+        <div class="filter-group">
+          <h6>Availability</h6>
+          <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" name="availability" value="in" id="avail" {% if active_filters.availability %}checked{% endif %} onchange="this.form.submit()"><label class="form-check-label" for="avail">In stock only</label></div>
+        </div>
+        <button class="btn btn-cozy w-100 mt-2" type="submit">Apply filters</button>
+      </form>
+    </aside>
+
+    <div class="col-lg-9">
+      <div class="toolbar">
+        <div class="text-muted small">{{ total }} product{{ total|pluralize }}</div>
+        <form method="get" class="d-flex align-items-center gap-2">
+          {% for key, values in request.GET.lists %}{% if key != "sort" and key != "page" %}{% for v in values %}<input type="hidden" name="{{ key }}" value="{{ v }}">{% endfor %}{% endif %}{% endfor %}
+          <label class="small text-muted" for="sortSel">Sort by</label>
+          <select class="form-select" id="sortSel" name="sort" onchange="this.form.submit()">
+            {% for val, label in sort_options %}<option value="{{ val }}" {% if sort == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </form>
+      </div>
+      {% if active_filters %}
+      <div class="mb-3">
+        {% for key, val in active_filters.items %}{% if key != "q" %}{% if key != "flag" or not collection %}<a class="chip" href="{{ request.path }}{% url_without key %}"><span>{{ key|filter_label }}: {{ val|display_value }}</span><i class="bi bi-x"></i></a>{% endif %}{% endif %}{% endfor %}
+      </div>
+      {% endif %}
+
+      {% if products %}
+      <div class="row row-cols-2 row-cols-md-3 g-3 g-lg-4">
+        {% for product in products %}<div class="col">{% include "base/_product_card.html" %}</div>{% endfor %}
+      </div>
+      {% include "base/_pagination.html" %}
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-search-heart"></i>
+        <h3 class="mt-3">No pieces found</h3>
+        <p class="text-muted">{% if query %}We couldn't find anything for “{{ query }}”. Try a different word, check the spelling, or explore these instead.{% else %}Try removing a filter or two.{% endif %}</p>
+        {% if suggested_categories %}<div class="sub-pills mb-4">{% for c in suggested_categories %}<a href="{{ c.get_absolute_url }}">{{ c.name }}</a>{% endfor %}</div>{% endif %}
+        <a href="{% url 'products:list' %}" class="btn btn-cozy">Browse all jewellery</a>
+      </div>
+      {% if suggested %}
+      <h3 class="mt-5 mb-4">Popular right now</h3>
+      <div class="row row-cols-2 row-cols-md-4 g-3">{% for product in suggested %}<div class="col">{% include "base/_product_card.html" %}</div>{% endfor %}</div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

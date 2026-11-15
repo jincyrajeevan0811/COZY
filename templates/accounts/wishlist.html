@@ -1,0 +1,27 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}Wishlist | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<h1 class="h2 mb-4">My wishlist <small class="text-muted fs-6">({{ items|length }})</small></h1>
+<div class="row row-cols-2 row-cols-md-3 g-3">
+  {% for item in items %}
+  {% with product=item.product %}
+  <div class="col">
+    <div class="product-card">
+      <a href="{{ product.get_absolute_url }}" class="pc-media">{% with img=product.primary_image %}{% if img %}<img class="pc-primary" src="{{ img.image.url }}" alt="{{ product.name }}" loading="lazy">{% else %}<span class="pc-noimg"><i class="bi bi-gem"></i></span>{% endif %}{% endwith %}</a>
+      <form method="post" action="{% url 'wishlist:remove' item.id %}">{% csrf_token %}<button class="pc-wish active" aria-label="Remove from wishlist"><i class="bi bi-x-lg"></i></button></form>
+      <div class="pc-body">
+        <span class="pc-cat">{{ product.category.name }}</span>
+        <h3 class="pc-title"><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
+        <div class="price-row"><span class="price">{{ product.price|inr:"auto" }}</span>{% if product.discount_percent %}<span class="mrp">{{ product.original_price|inr:"auto" }}</span>{% endif %}</div>
+        {% if product.is_active and product.in_stock %}
+        <form method="post" action="{% url 'wishlist:move_to_cart' item.id %}" class="mt-2">{% csrf_token %}<button class="btn btn-cozy btn-sm w-100">Move to bag</button></form>
+        {% else %}<span class="small text-danger mt-2">Currently unavailable</span>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% empty %}
+  <div class="col-12 w-100"><div class="empty-state"><i class="bi bi-heart"></i><p class="text-muted mt-2">Save pieces you love by tapping the heart.</p><a href="{% url 'products:list' %}" class="btn btn-cozy">Explore jewellery</a></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "dashboard/base.html" %}
+{% load dashboard_tags %}
+{% block title %}Order {{ order.order_number }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div>
+    <a href="{% url 'dashboard:order_list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> Orders</a>
+    <h1>Order {{ order.order_number }}</h1>
+    <p>Placed {{ order.created_at|date:"d M Y, h:i A" }} · {% status_badge order.status order.get_status_display %} {% status_badge order.payment_status order.get_payment_status_display %}</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'orders:invoice' order.order_number %}?view=1" target="_blank" rel="noopener" class="btn btn-d-light"><i class="bi bi-file-earmark-pdf me-1"></i>Invoice</a>
+    <a href="{% url 'dashboard:order_print' order.order_number %}" target="_blank" rel="noopener" class="btn btn-d-light"><i class="bi bi-printer me-1"></i>Print</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="d-card mb-3">
+      <div class="d-card-head"><h5>Items ({{ order.total_quantity }})</h5></div>
+      <div class="table-responsive">
+        <table class="table table-d">
+          <thead><tr><th></th><th>Product</th><th>SKU</th><th>Price</th><th>Qty</th><th class="text-end">Total</th></tr></thead>
+          <tbody>
+            {% for i in order.items.all %}
+            <tr>
+              <td>{% if i.image_url %}<img src="{{ i.image_url }}" class="table-thumb" alt="">{% else %}<span class="table-thumb"><i class="bi bi-gem"></i></span>{% endif %}</td>
+              <td>{% if i.product_id %}<a href="{% url 'dashboard:product_edit' i.product_id %}" class="text-dark fw-medium">{{ i.product_name }}</a>{% else %}{{ i.product_name }}{% endif %}{% if i.variant_name %}<div class="small text-muted">{{ i.variant_name }}</div>{% endif %}</td>
+              <td class="small">{{ i.sku }}</td>
+              <td>{{ i.unit_price|inr }}{% if i.original_price > i.unit_price %}<div class="small text-muted"><s>{{ i.original_price|inr }}</s></div>{% endif %}</td>
+              <td>{{ i.quantity }}</td>
+              <td class="text-end fw-medium">{{ i.line_total|inr }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="d-card-body border-top">
+        <div class="row">
+          <div class="col-md-6 small">
+            {% if order.customer_note %}<div class="mb-2"><strong>Customer note:</strong> {{ order.customer_note }}</div>{% endif %}
+            {% if order.gift_wrap %}<div><i class="bi bi-gift text-danger"></i> <strong>Gift wrap</strong>{% if order.gift_message %} — “{{ order.gift_message }}”{% endif %}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <div class="mini-stat"><span>Subtotal (MRP {{ order.mrp_total|inr }})</span><span>{{ order.subtotal|inr }}</span></div>
+            {% if order.coupon_discount %}<div class="mini-stat"><span>Coupon {{ order.coupon_code }}</span><span class="text-success">−{{ order.coupon_discount|inr }}</span></div>{% endif %}
+            <div class="mini-stat"><span>Shipping · {{ order.shipping_method_name }}</span><span>{{ order.shipping_charge|inr }}</span></div>
+            {% if order.gift_wrap_charge %}<div class="mini-stat"><span>Gift wrap</span><span>{{ order.gift_wrap_charge|inr }}</span></div>{% endif %}
+            {% if order.cod_charge %}<div class="mini-stat"><span>COD charge</span><span>{{ order.cod_charge|inr }}</span></div>{% endif %}
+            <div class="mini-stat"><span>GST {{ order.tax_percent|floatformat:"-2" }}% ({% if order.tax_inclusive %}incl.{% else %}added{% endif %})</span><span>{{ order.tax_amount|inr }}</span></div>
+            <div class="mini-stat fs-6"><strong>Grand total</strong><strong>{{ order.grand_total|inr }}</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <div class="d-card h-100"><div class="d-card-head"><h5>Customer</h5>{% if request.user|can:"customers.view" %}<a href="{% url 'dashboard:customer_detail' order.user_id %}" class="small">Profile · {{ customer_orders }} order{{ customer_orders|pluralize }}</a>{% endif %}</div>
+          <div class="d-card-body small"><strong>{{ order.full_name }}</strong><br>{{ order.email }}<br>{{ order.phone }}</div></div>
+      </div>
+      <div class="col-md-6">
+        <div class="d-card h-100"><div class="d-card-head"><h5>Delivery address</h5></div>
+          <div class="d-card-body small">{% for line in order.address_lines %}{{ line }}<br>{% endfor %}{% if order.estimated_delivery_to %}<span class="text-muted">ETA {{ order.estimated_delivery_from|date:"d M" }} – {{ order.estimated_delivery_to|date:"d M" }}</span>{% endif %}</div></div>
+      </div>
+    </div>
+
+    <div class="d-card mb-3">
+      <div class="d-card-head"><h5>Payments & refunds</h5>{% if order.refunds.all %}<a href="{% url 'dashboard:refund_list' %}" class="small">Manage refunds</a>{% endif %}</div>
+      <div class="table-responsive">
+        <table class="table table-d">
+          <thead><tr><th>Date</th><th>Gateway</th><th>Transaction</th><th>Status</th><th class="text-end">Amount</th></tr></thead>
+          <tbody>
+            {% for p in order.payments.all %}<tr><td class="small">{{ p.created_at|date:"d M Y, h:i A" }}</td><td>{{ p.get_gateway_display }}{% if p.method %} · {{ p.method|upper }}{% endif %}</td><td class="small">{{ p.transaction_id }}{% if p.error_message %}<div class="text-danger">{{ p.error_message }}</div>{% endif %}</td><td>{% status_badge p.status p.get_status_display %}</td><td class="text-end">{{ p.amount|inr }}</td></tr>{% endfor %}
+            {% for r in order.refunds.all %}<tr><td class="small">{{ r.created_at|date:"d M Y" }}</td><td>Refund</td><td class="small">{{ r.gateway_refund_id|default:r.reference|default:"—" }}</td><td>{% status_badge r.status r.get_status_display %}</td><td class="text-end text-danger">−{{ r.amount|inr }}</td></tr>{% endfor %}
+            {% if not order.payments.all and not order.refunds.all %}<tr><td colspan="5" class="text-center text-muted small py-3">No payment records yet.</td></tr>{% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="d-card">
+      <div class="d-card-head"><h5>Status history</h5></div>
+      <div class="d-card-body">
+        <ul class="timeline-d">
+          {% for h in order.status_history.all %}<li><strong class="small">{{ h.get_status_display }}</strong> <span class="small text-muted">· {{ h.created_at|date:"d M Y, h:i A" }}{% if h.changed_by %} · {{ h.changed_by.full_name }}{% endif %}</span>{% if h.note %}<div class="small">{{ h.note }}</div>{% endif %}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    {% if can_manage %}
+    <div class="d-card mb-3">
+      <div class="d-card-head"><h5>Update status</h5></div>
+      <div class="d-card-body">
+        {% if order.allowed_next_statuses %}
+        <form method="post" action="{% url 'dashboard:order_update_status' order.order_number %}" data-confirm="Update the order status? The customer will be notified if selected.">
+          {% csrf_token %}
+          {% include "base/_field.html" with field=status_form.status %}
+          {% include "base/_field.html" with field=status_form.note %}
+          {% include "base/_field.html" with field=status_form.notify_customer %}
+          <button class="btn btn-d w-100">Update status</button>
+        </form>
+        {% else %}<p class="small text-muted mb-0">This order is in a final state ({{ order.get_status_display }}).</p>{% endif %}
+        {% if order.return_requests.all %}<hr><div class="small">Return request: {% for rr in order.return_requests.all %}<a href="{% url 'dashboard:return_detail' rr.pk %}">{{ rr.get_status_display }}</a>{% endfor %}</div>{% endif %}
+      </div>
+    </div>
+    <div class="d-card mb-3">
+      <div class="d-card-head"><h5>Shipping & tracking</h5></div>
+      <div class="d-card-body">
+        <form method="post" action="{% url 'dashboard:order_update_shipment' order.order_number %}">
+          {% csrf_token %}
+          {% for field in shipment_form %}{% include "base/_field.html" %}{% endfor %}
+          <button class="btn btn-d-light w-100">Save shipping details</button>
+        </form>
+        {% if order.shipment.tracking_url %}<a href="{{ order.shipment.tracking_url }}" target="_blank" rel="noopener" class="small d-block mt-2"><i class="bi bi-box-arrow-up-right"></i> Open courier tracking</a>{% endif %}
+      </div>
+    </div>
+    <div class="d-card">
+      <div class="d-card-head"><h5>Internal note</h5></div>
+      <div class="d-card-body">
+        <form method="post" action="{% url 'dashboard:order_update_note' order.order_number %}">
+          {% csrf_token %}{{ note_form.admin_note }}
+          <button class="btn btn-d-light btn-sm mt-2">Save note</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="d-card"><div class="d-card-body small text-muted">You have view-only access to orders.</div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

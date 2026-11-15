@@ -1,0 +1,42 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}My orders | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <h1 class="h2 mb-0">My orders</h1>
+  <div class="sub-pills mt-0">
+    <a href="{% url 'orders:list' %}" class="{% if not status %}active{% endif %}">All</a>
+    <a href="?status=active" class="{% if status == 'active' %}active{% endif %}">In progress</a>
+    <a href="?status=delivered" class="{% if status == 'delivered' %}active{% endif %}">Delivered</a>
+    <a href="?status=cancelled" class="{% if status == 'cancelled' %}active{% endif %}">Cancelled</a>
+  </div>
+</div>
+{% for order in orders %}
+<div class="order-card">
+  <div class="order-head">
+    <div><span>Order</span><strong>{{ order.order_number }}</strong></div>
+    <div><span>Placed</span>{{ order.created_at|date:"d M Y" }}</div>
+    <div><span>Total</span>{{ order.grand_total|inr }}</div>
+    <div><span>Payment</span>{{ order.get_payment_method_display }}</div>
+    <div class="ms-auto">{% status_badge order.status order.get_status_display %}</div>
+  </div>
+  <div class="px-4 py-2">
+    {% for item in order.items.all|slice:":3" %}
+    <div class="order-line">
+      {% if item.image_url %}<img src="{{ item.image_url }}" alt="">{% else %}<span class="noimg"></span>{% endif %}
+      <div class="flex-grow-1"><div class="fw-medium">{{ item.product_name }}</div><div class="small text-muted">{% if item.variant_name %}{{ item.variant_name }} · {% endif %}Qty {{ item.quantity }}</div></div>
+      <div class="small fw-medium">{{ item.line_total|inr:"auto" }}</div>
+    </div>
+    {% endfor %}
+    {% if order.items.all|length > 3 %}<div class="small text-muted pb-2">+ {{ order.items.all|length|add:"-3" }} more item(s)</div>{% endif %}
+  </div>
+  <div class="px-4 pb-3 d-flex gap-2 flex-wrap">
+    <a href="{{ order.get_absolute_url }}" class="btn btn-cozy btn-sm">Track & details</a>
+    {% if order.needs_payment %}<a href="{% url 'payments:pay' order.order_number %}" class="btn btn-rose btn-sm">Complete payment</a>{% endif %}
+    {% if not order.needs_payment and order.status != "cancelled" %}<a href="{% url 'orders:invoice' order.order_number %}" class="btn btn-light-cozy btn-sm"><i class="bi bi-file-earmark-pdf"></i> Invoice</a>{% endif %}
+  </div>
+</div>
+{% empty %}
+<div class="empty-state"><i class="bi bi-bag"></i><p class="text-muted mt-2">No orders here yet.</p><a href="{% url 'products:list' %}" class="btn btn-cozy">Start shopping</a></div>
+{% endfor %}
+{% include "base/_pagination.html" %}
+{% endblock %}

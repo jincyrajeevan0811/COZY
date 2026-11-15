@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Packing slip {{ order.order_number }}</title>
+<style>
+body{font-family:Helvetica,Arial,sans-serif;color:#2B2B2B;margin:32px;font-size:13px}
+h1{font-family:Georgia,serif;letter-spacing:.3em;margin:0;color:#B76E79}
+table{width:100%;border-collapse:collapse;margin-top:16px}th,td{padding:8px;border-bottom:1px solid #EADFD3;text-align:left}
+th{background:#F3E9DC;font-size:11px;text-transform:uppercase;letter-spacing:.1em}.right{text-align:right}
+.grid{display:flex;justify-content:space-between;gap:24px;margin-top:20px}.box{border:1px solid #EADFD3;border-radius:8px;padding:12px;flex:1}
+@media print{.noprint{display:none}}
+</style></head>
+<body onload="window.print()">
+<div style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div><h1>{{ site.site_name|upper }}</h1><div style="font-size:11px;letter-spacing:.3em">PACKING SLIP</div></div>
+  <div class="right"><strong>{{ order.order_number }}</strong><br>{{ order.created_at|date:"d M Y, h:i A" }}<br>{{ order.get_payment_method_display }} · {{ order.get_payment_status_display }}</div>
+</div>
+<div class="grid">
+  <div class="box"><strong>Ship to</strong><br>{{ order.full_name }}<br>{% for line in order.address_lines %}{{ line }}<br>{% endfor %}Phone: {{ order.phone }}</div>
+  <div class="box"><strong>Shipping</strong><br>{{ order.shipping_method_name }}<br>{% if order.shipment.tracking_number %}AWB: {{ order.shipment.tracking_number }}<br>{% endif %}{% if order.payment_method == "cod" and order.payment_status != "paid" %}<strong>Collect on delivery: {{ order.grand_total|inr }}</strong>{% endif %}</div>
+</div>
+<table>
+  <thead><tr><th>#</th><th>Item</th><th>SKU</th><th class="right">Qty</th><th class="right">Amount</th></tr></thead>
+  <tbody>{% for i in order.items.all %}<tr><td>{{ forloop.counter }}</td><td>{{ i.product_name }}{% if i.variant_name %} ({{ i.variant_name }}){% endif %}</td><td>{{ i.sku }}</td><td class="right">{{ i.quantity }}</td><td class="right">{{ i.line_total|inr }}</td></tr>{% endfor %}</tbody>
+  <tfoot><tr><td colspan="4" class="right"><strong>Grand total</strong></td><td class="right"><strong>{{ order.grand_total|inr }}</strong></td></tr></tfoot>
+</table>
+{% if order.gift_wrap %}<p><strong>🎁 Gift wrap</strong>{% if order.gift_message %} — Message: “{{ order.gift_message }}”{% endif %}</p>{% endif %}
+{% if order.customer_note %}<p><strong>Customer note:</strong> {{ order.customer_note }}</p>{% endif %}
+<p class="noprint"><button onclick="window.print()">Print</button></p>
+</body></html>

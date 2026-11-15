@@ -1,0 +1,23 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}Returns & cancellations | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<h1 class="h2 mb-4">Returns & cancellations</h1>
+<div class="card-cozy">
+  <h5>Return requests</h5>
+  {% for rr in returns %}
+  <div class="d-flex justify-content-between align-items-center py-2 border-bottom flex-wrap gap-2">
+    <div><a href="{{ rr.order.get_absolute_url }}" class="fw-medium">{{ rr.order.order_number }}</a><div class="small text-muted">{{ rr.get_reason_display }} · {{ rr.created_at|date:"d M Y" }}</div></div>
+    <div class="text-end">{% status_badge rr.status rr.get_status_display %}{% if rr.refund_amount %}<div class="small mt-1">Refund {{ rr.refund_amount|inr }}</div>{% endif %}</div>
+  </div>
+  {% empty %}<p class="small text-muted mb-0">No return requests.</p>{% endfor %}
+</div>
+<div class="card-cozy">
+  <h5>Cancelled orders</h5>
+  {% for o in cancelled_orders %}
+  <div class="d-flex justify-content-between align-items-center py-2 border-bottom flex-wrap gap-2">
+    <div><a href="{{ o.get_absolute_url }}" class="fw-medium">{{ o.order_number }}</a><div class="small text-muted">{{ o.cancelled_at|date:"d M Y"|default:"—" }}{% if o.cancel_reason %} · {{ o.cancel_reason|truncatechars:70 }}{% endif %}</div></div>
+    <div class="text-end">{% status_badge o.status o.get_status_display %}<div class="small mt-1">{{ o.grand_total|inr }} · {{ o.get_payment_status_display }}</div></div>
+  </div>
+  {% empty %}<p class="small text-muted mb-0">No cancelled orders.</p>{% endfor %}
+</div>
+{% endblock %}

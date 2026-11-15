@@ -1,0 +1,38 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{% if role %}Edit {{ role.name }}{% else %}New role{% endif %}{% endblock %}
+{% block content %}
+<div class="page-title"><div><a href="{% url 'dashboard:role_list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> Roles</a><h1>{% if role %}{{ role.name }}{% else %}New role{% endif %}</h1>{% if role.slug == "super-admin" %}<p>The Super Admin role always has every permission.</p>{% endif %}</div></div>
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="d-card"><div class="d-card-body">
+        {% include "base/_field.html" with field=form.name %}
+        {% include "base/_field.html" with field=form.slug %}
+        {% include "base/_field.html" with field=form.description %}
+        {% include "base/_field.html" with field=form.is_staff_role %}
+      </div></div>
+    </div>
+    <div class="col-lg-8">
+      <div class="d-card"><div class="d-card-head"><h5>Permissions</h5><label class="small"><input type="checkbox" class="form-check-input me-1" data-select-all=".perm-check" {% if form.permissions.field.disabled %}disabled{% endif %}>Select all</label></div>
+        <div class="d-card-body">
+          {% for module, perms in perms_by_module.items %}
+          <div class="form-section"><h6>{{ module }}</h6>
+            <div class="row">
+              {% for p in perms %}
+              <div class="col-md-6"><div class="form-check mb-2">
+                <input class="form-check-input perm-check" type="checkbox" name="permissions" value="{{ p.pk }}" id="perm{{ p.pk }}" {% if p.pk in selected or role.slug == "super-admin" %}checked{% endif %} {% if form.permissions.field.disabled %}disabled{% endif %}>
+                <label class="form-check-label" for="perm{{ p.pk }}">{{ p.name }} <code class="small text-muted">{{ p.codename }}</code></label>
+              </div></div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+          {% for e in form.permissions.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="d-flex gap-2 mt-3"><button class="btn btn-d">Save role</button><a href="{% url 'dashboard:role_list' %}" class="btn btn-link text-muted">Cancel</a></div>
+</form>
+{% endblock %}

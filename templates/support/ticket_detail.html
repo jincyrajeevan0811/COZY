@@ -1,0 +1,24 @@
+{% extends "accounts/account_base.html" %}
+{% block title %}{{ ticket.ticket_number }} | {{ site.site_name }}{% endblock %}
+{% block account_content %}
+<a href="{% url 'support:list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> All tickets</a>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mt-1 mb-4">
+  <div><h1 class="h3 mb-0">{{ ticket.subject }}</h1><small class="text-muted">{{ ticket.ticket_number }} · {{ ticket.get_category_display }}{% if ticket.order %} · Order <a href="{{ ticket.order.get_absolute_url }}">{{ ticket.order.order_number }}</a>{% endif %}</small></div>
+  {% status_badge ticket.status ticket.get_status_display %}
+</div>
+{% for m in ticket_messages %}
+<div class="ticket-msg {% if m.is_staff_reply %}staff{% else %}mine{% endif %}">
+  <div class="small fw-medium mb-1">{% if m.is_staff_reply %}{{ site.site_name }} Support{% else %}You{% endif %} <span class="text-muted fw-normal">· {{ m.created_at|date:"d M, h:i A" }}</span></div>
+  <div>{{ m.message|linebreaksbr }}</div>
+</div>
+{% endfor %}
+{% if ticket.status != "closed" %}
+<form class="card-cozy mt-3" method="post" novalidate>
+  {% csrf_token %}
+  {% include "base/_field.html" with field=form.message %}
+  <button class="btn btn-cozy btn-sm">Send reply</button>
+</form>
+{% else %}
+<p class="small text-muted">This ticket is closed. <a href="{% url 'support:create' %}">Open a new ticket</a> if you need more help.</p>
+{% endif %}
+{% endblock %}

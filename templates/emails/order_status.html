@@ -1,0 +1,9 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 style="font-family:Georgia,serif;font-weight:normal;color:#2B2B2B;">Order {{ order.order_number }}: {{ order.get_status_display }}</h1>
+<p>Hi {{ order.full_name }},</p>
+<p>{{ status_message }}</p>
+{% if order.status == "shipped" or order.status == "out_for_delivery" %}{% with s=order.shipment %}{% if s.tracking_number %}<p>Courier: {{ s.provider.name|default:"Our delivery partner" }}<br>Tracking number: <strong>{{ s.tracking_number }}</strong></p>{% endif %}{% endwith %}{% endif %}
+{% if note %}<p style="color:#8A817C;">Note: {{ note }}</p>{% endif %}
+{% include "emails/_button.html" with url=link label="View order" %}
+{% endblock %}

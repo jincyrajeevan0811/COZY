@@ -1,0 +1,8 @@
+{% for e in form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+<div class="row g-0 gx-3">
+{% for field in form %}
+  <div class="{% if field.widget_type == 'textarea' or field.widget_type == 'checkboxselectmultiple' or field.widget_type == 'clearablefile' or field.widget_type == 'file' or field.widget_type == 'multiplefile' %}col-12{% else %}col-md-6{% endif %}">
+    {% include "base/_field.html" %}
+  </div>
+{% endfor %}
+</div>

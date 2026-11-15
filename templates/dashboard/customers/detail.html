@@ -1,0 +1,53 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ customer.full_name }}{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><a href="{% url 'dashboard:customer_list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> Customers</a><h1>{{ customer.full_name }}</h1><p>{{ customer.email }} · joined {{ customer.date_joined|date:"d M Y" }}{% if customer.last_login %} · last seen {{ customer.last_login|timesince }} ago{% endif %}</p></div>
+  {% if can_manage %}
+  <form method="post" action="{% url 'dashboard:customer_toggle' customer.pk %}" data-confirm="{% if customer.is_active %}Deactivate this account? The customer will not be able to sign in.{% else %}Reactivate this account?{% endif %}">
+    {% csrf_token %}<button class="btn {% if customer.is_active %}btn-d-light text-danger{% else %}btn-d{% endif %}"><i class="bi bi-power me-1"></i>{% if customer.is_active %}Deactivate account{% else %}Activate account{% endif %}</button>
+  </form>
+  {% endif %}
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="d-card kpi"><div class="ico rose"><i class="bi bi-bag"></i></div><div><div class="label">Orders</div><div class="value">{{ order_count }}</div></div></div></div>
+  <div class="col-md-3"><div class="d-card kpi"><div class="ico gold"><i class="bi bi-currency-rupee"></i></div><div><div class="label">Total spent</div><div class="value">{{ total_spent|inr:"auto" }}</div></div></div></div>
+  <div class="col-md-3"><div class="d-card kpi"><div class="ico green"><i class="bi bi-patch-check"></i></div><div><div class="label">Email</div><div class="value fs-6">{% if customer.email_verified %}Verified{% else %}Unverified{% endif %}</div></div></div></div>
+  <div class="col-md-3"><div class="d-card kpi"><div class="ico blue"><i class="bi bi-person"></i></div><div><div class="label">Status</div><div class="value fs-6">{% if customer.is_active %}Active{% else %}Inactive{% endif %}</div></div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="d-card mb-3">
+      <div class="d-card-head"><h5>Order history</h5></div>
+      <div class="table-responsive"><table class="table table-d">
+        <thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Payment</th><th class="text-end">Total</th></tr></thead>
+        <tbody>
+          {% for o in orders %}<tr><td><a href="{% url 'dashboard:order_detail' o.order_number %}">{{ o.order_number }}</a></td><td class="small">{{ o.created_at|date:"d M Y" }}</td><td>{% status_badge o.status o.get_status_display %}</td><td>{% status_badge o.payment_status o.get_payment_status_display %}</td><td class="text-end">{{ o.grand_total|inr }}</td></tr>
+          {% empty %}<tr><td colspan="5" class="text-center text-muted small py-3">No orders yet.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="d-card">
+      <div class="d-card-head"><h5>Reviews</h5></div>
+      <div class="d-card-body">
+        {% for r in reviews %}<div class="mini-stat"><span>{{ r.rating|stars }} {{ r.product.name }}</span>{% status_badge r.status %}</div>{% empty %}<p class="small text-muted mb-0">No reviews.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="d-card mb-3"><div class="d-card-head"><h5>Profile</h5></div><div class="d-card-body small">
+      <div class="mini-stat"><span>Phone</span><span>{{ customer.phone|default:"—" }}</span></div>
+      <div class="mini-stat"><span>Gender</span><span>{{ customer.profile.get_gender_display|default:"—" }}</span></div>
+      <div class="mini-stat"><span>Birthday</span><span>{{ customer.profile.date_of_birth|date:"d M"|default:"—" }}</span></div>
+      <div class="mini-stat"><span>Marketing emails</span><span>{% if customer.profile.marketing_opt_in %}Yes{% else %}No{% endif %}</span></div>
+      <div class="mini-stat"><span>Role</span><span>{{ customer.role.name|default:"Customer" }}</span></div>
+    </div></div>
+    <div class="d-card mb-3"><div class="d-card-head"><h5>Addresses</h5></div><div class="d-card-body small">
+      {% for a in addresses %}<div class="mb-3">{% if a.is_default %}<span class="badge badge-soft-primary mb-1">Default</span><br>{% endif %}<strong>{{ a.full_name }}</strong><br>{{ a.one_line }}<br>{{ a.phone }}</div>{% empty %}<span class="text-muted">No saved addresses.</span>{% endfor %}
+    </div></div>
+    <div class="d-card"><div class="d-card-head"><h5>Support tickets</h5></div><div class="d-card-body small">
+      {% for t in tickets %}<div class="mini-stat"><a href="{% url 'dashboard:ticket_detail' t.pk %}">{{ t.ticket_number }} · {{ t.subject|truncatechars:28 }}</a>{% status_badge t.status t.get_status_display %}</div>{% empty %}<span class="text-muted">No tickets.</span>{% endfor %}
+    </div></div>
+  </div>
+</div>
+{% endblock %}

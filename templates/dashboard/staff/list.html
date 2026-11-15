@@ -1,0 +1,31 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Staff users{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><h1>Staff users</h1><p>Team members who can sign in to this dashboard. Access depends on their role.</p></div>
+  <a href="{% url 'dashboard:staff_create' %}" class="btn btn-d"><i class="bi bi-person-plus me-1"></i>Add staff member</a>
+</div>
+<div class="d-card">
+  <div class="d-card-head">
+    <form class="filter-bar" method="get">
+      <input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="Search staff…">
+      <select name="role" class="form-select" onchange="this.form.submit()"><option value="">All roles</option>{% for r in roles %}<option value="{{ r.slug }}" {% if request.GET.role == r.slug %}selected{% endif %}>{{ r.name }}</option>{% endfor %}</select>
+      <button class="btn btn-d-light"><i class="bi bi-funnel"></i></button>
+    </form>
+  </div>
+  <div class="table-responsive"><table class="table table-d">
+    <thead><tr><th>Name</th><th>Role</th><th>Last sign-in</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for m in staff %}
+      <tr>
+        <td><span class="fw-medium">{{ m.full_name }}</span><div class="small text-muted">{{ m.email }}</div></td>
+        <td><span class="badge badge-soft-primary">{{ m.role.name|default:"Superuser" }}</span></td>
+        <td class="small">{% if m.last_login %}{{ m.last_login|timesince }} ago{% else %}Never{% endif %}</td>
+        <td>{% if m.is_active %}<span class="badge badge-soft-success">Active</span>{% else %}<span class="badge badge-soft-danger">Inactive</span>{% endif %}</td>
+        <td class="text-end">{% if not m.is_super_admin or request.user.is_super_admin %}<a href="{% url 'dashboard:staff_edit' m.pk %}" class="btn btn-d-light btn-sm">Edit</a>{% endif %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="5"><div class="empty-d"><i class="bi bi-person-badge"></i>No staff found.</div></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Stock history{% endblock %}
+{% block content %}
+<div class="page-title">
+  <div><a href="{% url 'dashboard:inventory_list' %}" class="small text-muted"><i class="bi bi-arrow-left"></i> Inventory</a><h1>Stock movement history</h1><p>Every stock-in, stock-out, order, cancellation and return.</p></div>
+</div>
+<div class="d-card">
+  <div class="d-card-head">
+    <form class="filter-bar" method="get">
+      {% if request.GET.inventory %}<input type="hidden" name="inventory" value="{{ request.GET.inventory }}">{% endif %}
+      <input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="Product, SKU or reference…">
+      <select name="type" class="form-select" onchange="this.form.submit()"><option value="">All movements</option>{% for val, label in types %}<option value="{{ val }}" {% if request.GET.type == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+      <button class="btn btn-d-light"><i class="bi bi-funnel"></i></button>
+      {% if request.GET %}<a href="{% url 'dashboard:stock_history' %}" class="small">Reset</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-d">
+      <thead><tr><th>Date</th><th>Item</th><th>Movement</th><th>Change</th><th>Balance</th><th>Reference</th><th>Note</th><th>By</th></tr></thead>
+      <tbody>
+        {% for h in page_obj %}
+        <tr>
+          <td class="small text-nowrap">{{ h.created_at|date:"d M Y, h:i A" }}</td>
+          <td>{{ h.inventory.product.name }}{% if h.inventory.variant %}<div class="small text-muted">{{ h.inventory.variant.name }}</div>{% endif %}</td>
+          <td><span class="badge badge-soft-light">{{ h.get_movement_type_display }}</span></td>
+          <td class="fw-semibold {% if h.quantity_change > 0 %}text-success{% else %}text-danger{% endif %}">{% if h.quantity_change > 0 %}+{% endif %}{{ h.quantity_change }}</td>
+          <td>{{ h.balance_after }}</td>
+          <td class="small">{% if h.movement_type == "order" or h.movement_type == "cancel" or h.movement_type == "return" %}<a href="{% url 'dashboard:order_detail' h.reference %}">{{ h.reference }}</a>{% else %}{{ h.reference|default:"—" }}{% endif %}</td>
+          <td class="small text-muted">{{ h.note|default:"—" }}</td>
+          <td class="small">{{ h.user.full_name|default:"System" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8"><div class="empty-d"><i class="bi bi-clock-history"></i>No stock movements yet.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "dashboard/_pagination.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ subject }}</title></head>
+<body style="margin:0;padding:0;background:#FBF7F2;font-family:Helvetica,Arial,sans-serif;color:#3A3634;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF7F2;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;">
+        <tr><td style="background:#F3E9DC;padding:28px;text-align:center;">
+          <div style="font-family:Georgia,serif;font-size:30px;letter-spacing:10px;color:#2B2B2B;font-weight:bold;">{{ site.site_name|default:"COZY"|upper }}</div>
+          <div style="font-size:10px;letter-spacing:5px;color:#B76E79;margin-top:6px;">FASHION JEWELLERY</div>
+        </td></tr>
+        <tr><td style="padding:32px 36px;font-size:15px;line-height:1.65;">
+          {% block body %}{% endblock %}
+        </td></tr>
+        <tr><td style="background:#2B2B2B;color:#cfc6bd;padding:22px 36px;font-size:12px;text-align:center;line-height:1.6;">
+          Questions? Reply to this email or write to {{ site.contact_email|default:"our support team" }}<br>
+          © {% now "Y" %} {{ site.copyright_text|default:"COZY Fashion Jewellery" }}
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

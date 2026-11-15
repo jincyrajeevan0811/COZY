@@ -1,0 +1,6 @@
+{% extends "emails/base_email.html" %}
+{% block body %}
+<h1 style="font-family:Georgia,serif;font-weight:normal;color:#2B2B2B;">Welcome to COZY, {{ user.first_name }} ✨</h1>
+<p>We're so happy you're here. Discover trend-led earrings, necklaces, rings and gift sets — designed for everyday sparkle.</p>
+{% include "emails/_button.html" with url=link label="Start shopping" %}
+{% endblock %}
