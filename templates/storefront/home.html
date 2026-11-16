@@ -5,28 +5,23 @@
 
 {% if block.key == "hero" and not items %}
 <section class="hero-fallback">
-  <div class="container"><div class="col-lg-6">
+  <div class="container"><div class="col-lg-7">
     <span class="eyebrow">Welcome to {{ site.site_name }}</span>
-    <h1>{{ site.tagline }}</h1>
-    <p class="text-muted">Add hero banners from the dashboard to replace this welcome block.</p>
+    <h1 class="display-serif">{{ site.tagline }}</h1>
+    <p class="text-muted mt-3">Add hero banners from the dashboard to replace this welcome block.</p>
     <a class="btn btn-cozy mt-2" href="{% url 'products:list' %}">Shop the collection</a>
   </div></div>
 </section>
 
 {% elif block.key == "hero" %}
-<section class="hero">
-  <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5500">
-    {% if items|length > 1 %}
-    <div class="carousel-indicators">
-      {% for b in items %}<button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>{% endfor %}
-    </div>
-    {% endif %}
+<section class="hero position-relative">
+  <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="6000">
     <div class="carousel-inner">
       {% for b in items %}
       <div class="carousel-item {% if forloop.first %}active{% endif %}">
         <picture>
           {% if b.mobile_image %}<source media="(max-width: 767px)" srcset="{{ b.mobile_image.url }}">{% endif %}
-          <img src="{{ b.image.url }}" alt="{{ b.title }}" {% if not forloop.first %}loading="lazy"{% endif %}>
+          <img src="{{ b.image.url }}" alt="{{ b.title }}" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
         </picture>
         <div class="hero-overlay align-{{ b.text_align }}"></div>
         <div class="hero-content align-{{ b.text_align }}">
@@ -34,27 +29,39 @@
             {% if b.eyebrow %}<span class="eyebrow">{{ b.eyebrow }}</span>{% endif %}
             <h1>{{ b.title }}</h1>
             {% if b.subtitle %}<p>{{ b.subtitle }}</p>{% endif %}
-            {% if b.link %}<a href="{{ b.link }}" class="btn btn-cozy">{{ b.button_text|default:"Shop now" }} <i class="bi bi-arrow-right ms-1"></i></a>{% endif %}
+            <div class="d-flex gap-2 flex-wrap {% if b.text_align == 'center' %}justify-content-center{% elif b.text_align == 'right' %}justify-content-end{% endif %}">
+              {% if b.link %}<a href="{{ b.link }}" class="btn btn-white btn-lg">{{ b.button_text|default:"Shop now" }}</a>{% endif %}
+              <a href="{% url 'products:list' %}" class="btn btn-ghost-white btn-lg d-none d-sm-inline-block">Explore all</a>
+            </div>
           </div></div>
         </div>
       </div>
       {% endfor %}
     </div>
     {% if items|length > 1 %}
+    <div class="carousel-indicators">
+      {% for b in items %}<button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>{% endfor %}
+    </div>
     <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button>
     <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button>
     {% endif %}
   </div>
+  <div class="hero-scroll d-none d-md-block">SCROLL</div>
 </section>
 
 {% elif block.key == "usp" %}
+<div class="value-strip" aria-hidden="true">
+  <div class="marquee">
+    {% for i in "12" %}<span>Korean minimal</span><span>Western statement</span><span>Festive imitation</span><span>Everyday sparkle</span><span>Gift-ready packaging</span><span>Skin-friendly finishes</span>{% endfor %}
+  </div>
+</div>
 <section class="usp-strip">
   <div class="container">
     <div class="row row-cols-2 row-cols-lg-4">
-      <div class="col"><div class="usp-item"><i class="bi bi-truck"></i><div><strong>Free shipping</strong><small>On orders above {{ site.free_shipping_threshold|inr:"auto" }}</small></div></div></div>
-      <div class="col"><div class="usp-item"><i class="bi bi-arrow-repeat"></i><div><strong>Easy returns</strong><small>{{ site.return_window_days }}-day hassle-free returns</small></div></div></div>
-      <div class="col"><div class="usp-item"><i class="bi bi-shield-check"></i><div><strong>Secure payments</strong><small>UPI, cards, net banking{% if site.cod_enabled %} & COD{% endif %}</small></div></div></div>
-      <div class="col"><div class="usp-item"><i class="bi bi-gift"></i><div><strong>Gift ready</strong><small>Elegant gift wrapping</small></div></div></div>
+      <div class="col"><div class="usp-item"><i class="bi bi-truck"></i><div><strong>Free shipping</strong><small>Above {{ site.free_shipping_threshold|inr:"auto" }}</small></div></div></div>
+      <div class="col"><div class="usp-item"><i class="bi bi-arrow-repeat"></i><div><strong>Easy returns</strong><small>{{ site.return_window_days }}-day, no fuss</small></div></div></div>
+      <div class="col"><div class="usp-item"><i class="bi bi-shield-check"></i><div><strong>Secure payments</strong><small>UPI · Cards{% if site.cod_enabled %} · COD{% endif %}</small></div></div></div>
+      <div class="col"><div class="usp-item"><i class="bi bi-gift"></i><div><strong>Gift ready</strong><small>Signature COZY pouch</small></div></div></div>
     </div>
   </div>
 </section>
@@ -62,34 +69,71 @@
 {% elif block.key == "categories" %}
 <section class="section">
   <div class="container">
-    <div class="section-head reveal"><span class="eyebrow">Collections</span><h2>{{ s.title|default:"Shop by Category" }}</h2>{% if s.subtitle %}<p>{{ s.subtitle }}</p>{% endif %}</div>
-    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-{% if items|length > 6 %}6{% else %}{{ items|length }}{% endif %} g-4 justify-content-center">
-      {% for cat in items %}
-      <div class="col reveal">
-        <a class="cat-card" href="{{ cat.get_absolute_url }}">
-          <div class="cat-img">{% if cat.image %}<img src="{{ cat.image.url }}" alt="{{ cat.name }}" loading="lazy">{% else %}<span class="cat-placeholder"><i class="bi bi-gem"></i></span>{% endif %}</div>
-          <h3>{{ cat.name }}</h3>
-          <small>Explore</small>
-        </a>
-      </div>
+    <div class="section-head-row reveal">
+      <div><span class="eyebrow">Collections</span><h2 class="mb-1">{{ s.title|default:"Shop by Category" }}</h2>{% if s.subtitle %}<p class="text-muted mb-0">{{ s.subtitle }}</p>{% endif %}</div>
+      <a class="btn-link-cozy" href="{% url 'products:list' %}">All jewellery <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="cat-mosaic">
+      {% for cat in items|slice:":7" %}
+      <a class="cat-tile reveal" href="{{ cat.get_absolute_url }}">
+        {% if cat.image %}<img src="{{ cat.image.url }}" alt="{{ cat.name }}" loading="lazy">{% endif %}
+        <div class="cat-label">
+          <div><small>{% if forloop.first %}Most loved{% else %}Explore{% endif %}</small><h3>{{ cat.name }}</h3></div>
+          <span class="arrow"><i class="bi bi-arrow-right"></i></span>
+        </div>
+      </a>
       {% endfor %}
     </div>
   </div>
 </section>
 
-{% elif block.key == "new_arrivals" or block.key == "bestsellers" or block.key == "trending" or block.key == "featured" or block.key == "discount" %}
-<section class="section {% if block.key == 'bestsellers' or block.key == 'discount' %}bg-ivory{% endif %}">
+{% elif block.key == "featured" %}
+<section class="section">
   <div class="container">
+    <div class="look reveal">
+      <div class="look-img">
+        {% with hero=items.0.primary_image %}
+        {% if site.brand_image %}<img src="{{ site.brand_image.url }}" alt="Shop the look" loading="lazy">{% elif hero %}<img src="{{ hero.image.url }}" alt="" loading="lazy">{% endif %}
+        {% endwith %}
+        <span class="look-dot" style="left:42%;top:30%"></span>
+        <span class="look-dot" style="left:58%;top:52%"></span>
+      </div>
+      <div>
+        <span class="eyebrow">Shop the look</span>
+        <h2 class="mb-2">{{ s.title|default:"Featured Picks" }}</h2>
+        {% if s.subtitle %}<p class="text-muted">{{ s.subtitle }}</p>{% endif %}
+        <div class="mt-3">
+          {% for product in items|slice:":4" %}
+          <a href="{{ product.get_absolute_url }}" class="look-item">
+            {% with img=product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="" loading="lazy">{% else %}<img alt="">{% endif %}{% endwith %}
+            <div class="flex-grow-1"><span class="pc-cat">{{ product.category.name }}</span><div class="fw-medium">{{ product.name }}</div><div class="small"><span class="price">{{ product.price|inr:"auto" }}</span>{% if product.discount_percent %} <span class="mrp">{{ product.original_price|inr:"auto" }}</span>{% endif %}</div></div>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+          {% endfor %}
+        </div>
+        <a href="{% url 'products:collection' 'featured' %}" class="btn btn-cozy mt-4">Shop all featured</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% elif block.key == "new_arrivals" or block.key == "bestsellers" or block.key == "trending" or block.key == "discount" %}
+<section class="section {% if block.key == 'bestsellers' or block.key == 'discount' %}bg-ivory{% endif %}">
+  <div class="container product-rail">
     <div class="section-head-row reveal">
       <div>
-        <span class="eyebrow">{% if block.key == "new_arrivals" %}Just in{% elif block.key == "bestsellers" %}Most loved{% elif block.key == "trending" %}On trend{% elif block.key == "discount" %}Limited time{% else %}Curated{% endif %}</span>
+        <span class="eyebrow">{% if block.key == "new_arrivals" %}Just landed{% elif block.key == "bestsellers" %}Most loved{% elif block.key == "trending" %}On trend{% else %}Limited time{% endif %}</span>
         <h2 class="mb-1">{{ s.title }}</h2>
         {% if s.subtitle %}<p class="text-muted mb-0">{{ s.subtitle }}</p>{% endif %}
       </div>
-      <a class="btn-link-cozy" href="{% if block.key == 'new_arrivals' %}{% url 'products:collection' 'new-arrivals' %}{% elif block.key == 'bestsellers' %}{% url 'products:collection' 'best-sellers' %}{% elif block.key == 'trending' %}{% url 'products:collection' 'trending' %}{% elif block.key == 'discount' %}{% url 'products:collection' 'offers' %}{% else %}{% url 'products:collection' 'featured' %}{% endif %}">View all <i class="bi bi-arrow-right"></i></a>
+      <div class="d-flex align-items-center gap-2">
+        <a class="btn-link-cozy me-3" href="{% if block.key == 'new_arrivals' %}{% url 'products:collection' 'new-arrivals' %}{% elif block.key == 'bestsellers' %}{% url 'products:collection' 'best-sellers' %}{% elif block.key == 'trending' %}{% url 'products:collection' 'trending' %}{% else %}{% url 'products:collection' 'offers' %}{% endif %}">View all</a>
+        <button type="button" class="rail-btn d-none d-md-inline-flex" data-rail="#rail-{{ block.key }}" data-dir="prev" aria-label="Previous"><i class="bi bi-arrow-left"></i></button>
+        <button type="button" class="rail-btn d-none d-md-inline-flex" data-rail="#rail-{{ block.key }}" data-dir="next" aria-label="Next"><i class="bi bi-arrow-right"></i></button>
+      </div>
     </div>
-    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-lg-4">
-      {% for product in items %}<div class="col reveal">{% include "base/_product_card.html" %}</div>{% endfor %}
+    <div class="scroll-row" id="rail-{{ block.key }}">
+      {% for product in items %}<div class="reveal">{% include "base/_product_card.html" %}</div>{% endfor %}
     </div>
   </div>
 </section>
@@ -98,7 +142,7 @@
 <section class="section-sm">
   <div class="container">
     <div class="row g-4">
-      {% for b in items %}
+      {% for b in items|slice:":2" %}
       <div class="col-md-6 reveal">
         <a class="promo-tile" href="{{ b.link|default:'#' }}">
           <img src="{{ b.image.url }}" alt="{{ b.title }}" loading="lazy">
@@ -106,7 +150,7 @@
             {% if b.eyebrow %}<span class="eyebrow">{{ b.eyebrow }}</span>{% endif %}
             <h3>{{ b.title }}</h3>
             {% if b.subtitle %}<p>{{ b.subtitle }}</p>{% endif %}
-            <span class="btn-link-cozy">{{ b.button_text|default:"Shop now" }}</span>
+            <span class="btn-link-cozy">{{ b.button_text|default:"Shop now" }} <i class="bi bi-arrow-right"></i></span>
           </div>
         </a>
       </div>
@@ -122,10 +166,16 @@
     <div class="offer-strip reveal">
       <img src="{{ b.image.url }}" alt="" loading="lazy">
       <div class="offer-content">
-        {% if b.eyebrow %}<span class="eyebrow text-white-50">{{ b.eyebrow }}</span>{% endif %}
+        {% if b.eyebrow %}<span class="eyebrow" style="color:#F3D9B1">{{ b.eyebrow }}</span>{% endif %}
         <h2>{{ b.title }}</h2>
-        {% if b.subtitle %}<p class="mb-4">{{ b.subtitle }}</p>{% endif %}
-        {% if b.link %}<a href="{{ b.link }}" class="btn btn-rose">{{ b.button_text|default:"Shop the offer" }}</a>{% endif %}
+        {% if b.subtitle %}<p class="mb-0 mt-3">{{ b.subtitle }}</p>{% endif %}
+        <div class="countdown" data-countdown="{% if b.ends_at %}{{ b.ends_at|date:'c' }}{% endif %}">
+          <div><strong data-unit="d">00</strong><small>Days</small></div>
+          <div><strong data-unit="h">00</strong><small>Hrs</small></div>
+          <div><strong data-unit="m">00</strong><small>Min</small></div>
+          <div><strong data-unit="s">00</strong><small>Sec</small></div>
+        </div>
+        {% if b.link %}<a href="{{ b.link }}" class="btn btn-white btn-lg">{{ b.button_text|default:"Shop the offer" }}</a>{% endif %}
       </div>
     </div>
   </div>
@@ -136,18 +186,19 @@
 <section class="section">
   <div class="container">
     <div class="brand-intro reveal">
-      <div class="row g-0 align-items-stretch">
-        <div class="col-lg-6"><div class="brand-img">{% if site.brand_image %}<img src="{{ site.brand_image.url }}" alt="{{ site.site_name }}" loading="lazy">{% endif %}</div></div>
-        <div class="col-lg-6 d-flex align-items-center">
-          <div class="brand-copy">
+      <div class="row g-5 align-items-center">
+        <div class="col-lg-6 order-lg-2"><div class="brand-img">{% if site.brand_image %}<img src="{{ site.brand_image.url }}" alt="{{ site.site_name }}" loading="lazy">{% endif %}</div></div>
+        <div class="col-lg-6">
+          <div class="brand-copy ps-lg-0">
             <span class="eyebrow">The {{ site.site_name }} story</span>
             <h2>{{ site.brand_title }}</h2>
-            <p class="text-muted mt-3">{{ site.brand_text|linebreaksbr }}</p>
+            <p class="text-muted mt-3 fs-6">{{ site.brand_text|linebreaksbr }}</p>
             <div class="brand-stats">
               <div><strong>{{ site.return_window_days }}-day</strong><small>Easy returns</small></div>
               <div><strong>100%</strong><small>Secure checkout</small></div>
               <div><strong>Pan-India</strong><small>Delivery</small></div>
             </div>
+            <div class="signature">with love, team {{ site.site_name }}</div>
             <a href="{% url 'products:list' %}" class="btn btn-cozy mt-4">Discover the collection</a>
           </div>
         </div>
@@ -163,8 +214,8 @@
     <div class="row g-4">
       {% for t in items|slice:":3" %}
       <div class="col-md-4 reveal">
-        <div class="testimonial-card">
-          <div class="stars mb-2">{{ t.rating|stars }}</div>
+        <div class="testimonial-card h-100">
+          <div class="stars mb-3">{{ t.rating|stars }}</div>
           <p>{{ t.text }}</p>
           <div class="who">
             {% if t.image %}<img src="{{ t.image.url }}" alt="{{ t.name }}" loading="lazy">{% else %}<span class="avatar">{{ t.name|first }}</span>{% endif %}
@@ -178,12 +229,10 @@
 </section>
 
 {% elif block.key == "instagram" %}
-<section class="section">
-  <div class="container-fluid px-0">
-    <div class="section-head reveal"><span class="eyebrow">{{ site.instagram_handle }}</span><h2>{{ s.title|default:"#WearCOZY" }}</h2>{% if s.subtitle %}<p>{{ s.subtitle }}</p>{% endif %}</div>
-    <div class="insta-grid">
-      {% for post in items|slice:":6" %}<a href="{{ post.link|default:site.instagram_url|default:'#' }}" target="_blank" rel="noopener" aria-label="{{ post.caption|default:'Instagram post' }}"><img src="{{ post.image.url }}" alt="{{ post.caption }}" loading="lazy"></a>{% endfor %}
-    </div>
+<section class="section pb-0">
+  <div class="section-head reveal"><span class="eyebrow">{{ site.instagram_handle }}</span><h2>{{ s.title|default:"#WearCOZY" }}</h2>{% if s.subtitle %}<p>{{ s.subtitle }}</p>{% endif %}</div>
+  <div class="insta-grid">
+    {% for post in items|slice:":6" %}<a href="{{ post.link|default:site.instagram_url|default:'#' }}" target="_blank" rel="noopener" aria-label="{{ post.caption|default:'Instagram post' }}"><img src="{{ post.image.url }}" alt="{{ post.caption }}" loading="lazy"></a>{% endfor %}
   </div>
 </section>
 
@@ -191,7 +240,7 @@
 <section class="section">
   <div class="container">
     <div class="newsletter reveal">
-      <span class="eyebrow">Newsletter</span>
+      <span class="eyebrow">Members get more</span>
       <h2>{{ site.newsletter_title }}</h2>
       <p class="text-muted mb-0">{{ site.newsletter_text }}</p>
       <form class="js-newsletter" method="post" action="{% url 'site:newsletter_subscribe' %}">
@@ -207,9 +256,9 @@
 {% endwith %}
 {% empty %}
 <section class="hero-fallback">
-  <div class="container"><div class="col-lg-6">
+  <div class="container"><div class="col-lg-7">
     <span class="eyebrow">Welcome to {{ site.site_name }}</span>
-    <h1>{{ site.tagline }}</h1>
+    <h1 class="display-serif">{{ site.tagline }}</h1>
     <a class="btn btn-cozy mt-3" href="{% url 'products:list' %}">Shop the collection</a>
   </div></div>
 </section>

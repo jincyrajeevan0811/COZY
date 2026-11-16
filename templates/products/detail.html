@@ -112,6 +112,12 @@
         </form>
         {% endwith %}
 
+        <div class="trust-row">
+          <div><i class="bi bi-shield-check"></i>Secure<br>payments</div>
+          <div><i class="bi bi-arrow-repeat"></i>{{ product.return_days }}-day<br>returns</div>
+          <div><i class="bi bi-gift"></i>Gift-ready<br>packaging</div>
+        </div>
+
         <div class="card-cozy mb-3">
           <label class="form-label mb-2"><i class="bi bi-geo-alt me-1"></i>Check delivery</label>
           <form class="js-pincode-form input-group" action="{% url 'shipping:pincode_check' %}">
@@ -200,6 +206,12 @@
     <div class="scroll-row">{% for product in related_products %}{% include "base/_product_card.html" %}{% endfor %}</div>
   </section>
   {% endif %}
+
+  <div class="mobile-buy-bar">
+    {% with img=product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="" style="width:44px;height:54px;object-fit:cover;border-radius:8px">{% endif %}{% endwith %}
+    <div class="flex-grow-1 small lh-sm"><div class="fw-medium text-truncate" style="max-width:46vw">{{ product.name }}</div><span class="js-price fw-semibold">{{ product.price|inr:"auto" }}</span></div>
+    <button type="button" class="btn btn-cozy btn-sm" data-buy-bar-submit {% if not product.in_stock and not product.has_variants %}disabled{% endif %}>Add to bag</button>
+  </div>
 
   {% if recent_products %}
   <section class="mt-5 pt-4">

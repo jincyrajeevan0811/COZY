@@ -25,6 +25,13 @@ def cart_detail(request):
     return render(request, "cart/cart.html", {"cart": cart, "summary": summary, "suggestions": suggestions})
 
 
+def cart_drawer(request):
+    """HTML fragment for the slide-in mini bag."""
+    cart = get_cart(request)
+    summary = summarize(cart, request.user)
+    return render(request, "cart/_drawer.html", {"cart": cart, "summary": summary})
+
+
 @require_POST
 def cart_add(request):
     product = get_object_or_404(Product, pk=request.POST.get("product_id"), is_active=True)

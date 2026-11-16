@@ -57,7 +57,7 @@ class ProductQuerySet(models.QuerySet):
     def for_listing(self):
         return (
             self.active()
-            .select_related("category", "subcategory")
+            .select_related("category", "subcategory", "color")
             .prefetch_related("images")
             .with_stock()
         )

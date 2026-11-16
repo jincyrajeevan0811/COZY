@@ -113,8 +113,14 @@
     if (btn) { btn.disabled = true; btn.dataset.label = btn.innerHTML; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
     const { ok, json } = await postForm(form.action, new FormData(form));
     if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.label; }
-    toast(json.message || (ok ? "Added to bag" : "Something went wrong"), ok ? "success" : "danger");
     if (json.cart_count !== undefined) setCount(".js-cart-count", json.cart_count);
+    if (ok && window.cozyOpenMiniCart) {
+      const qv = document.getElementById("quickViewModal");
+      if (qv && qv.classList.contains("show")) bootstrap.Modal.getInstance(qv).hide();
+      window.cozyOpenMiniCart();
+    } else {
+      toast(json.message || (ok ? "Added to bag" : "Something went wrong"), ok ? "success" : "danger");
+    }
   });
 
   // ---------------------------------------------------------------- wishlist toggle
@@ -286,6 +292,67 @@
     });
     checkout.addEventListener("submit", () => { const b = $("#placeOrderBtn"); if (b) { b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…'; } });
     syncAddress(); markSelected(); refresh();
+  }
+
+  // ---------------------------------------------------------------- mini cart drawer
+  const miniCart = $("#miniCart");
+  const bagLink = $("[data-mini-cart]");
+  if (miniCart && bagLink) {
+    window.cozyOpenMiniCart = async () => {
+      const body = $(".offcanvas-body", miniCart);
+      bootstrap.Offcanvas.getOrCreateInstance(miniCart).show();
+      try {
+        const res = await fetch(bagLink.dataset.miniCart, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+        body.innerHTML = await res.text();
+      } catch (e) { window.location.href = bagLink.href; }
+    };
+    bagLink.addEventListener("click", (e) => {
+      if (window.innerWidth < 992 || e.metaKey || e.ctrlKey) return;
+      e.preventDefault();
+      window.cozyOpenMiniCart();
+    });
+  }
+
+  // ---------------------------------------------------------------- product rails (arrows)
+  $$("[data-rail]").forEach((btn) => btn.addEventListener("click", () => {
+    const row = $(btn.dataset.rail);
+    if (!row) return;
+    row.scrollBy({ left: (btn.dataset.dir === "next" ? 1 : -1) * row.clientWidth * 0.9, behavior: "smooth" });
+  }));
+
+  // ---------------------------------------------------------------- homepage tabs
+  $$("[data-tab-group]").forEach((group) => {
+    const buttons = $$("button[data-tab]", group);
+    buttons.forEach((b) => b.addEventListener("click", () => {
+      buttons.forEach((x) => x.classList.toggle("active", x === b));
+      $$(`[data-tab-panel="${group.dataset.tabGroup}"]`).forEach((p) => p.classList.toggle("d-none", p.dataset.panel !== b.dataset.tab));
+    }));
+  });
+
+  // ---------------------------------------------------------------- offer countdown
+  $$("[data-countdown]").forEach((el) => {
+    const end = el.dataset.countdown ? new Date(el.dataset.countdown) : (() => { const d = new Date(); d.setHours(23, 59, 59, 0); return d; })();
+    const tick = () => {
+      let s = Math.max(0, Math.floor((end - new Date()) / 1000));
+      const parts = { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
+      Object.entries(parts).forEach(([k, v]) => { const n = $(`[data-unit="${k}"]`, el); if (n) n.textContent = String(v).padStart(2, "0"); });
+    };
+    tick(); setInterval(tick, 1000);
+  });
+
+  // ---------------------------------------------------------------- back to top & sticky buy bar
+  const toTop = $(".to-top");
+  if (toTop) {
+    window.addEventListener("scroll", () => toTop.classList.toggle("show", window.scrollY > 900), { passive: true });
+    toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }
+  const buyBar = $(".mobile-buy-bar"), buyForm = $(".pd-info .js-add-to-cart");
+  if (buyBar && buyForm && "IntersectionObserver" in window) {
+    new IntersectionObserver(([en]) => buyBar.classList.toggle("show", !en.isIntersecting && en.boundingClientRect.top < 0)).observe(buyForm);
+    $("[data-buy-bar-submit]", buyBar).addEventListener("click", () => {
+      const btn = $("button[type=submit]:not([name])", buyForm);
+      if (btn) btn.click(); else buyForm.requestSubmit();
+    });
   }
 
   // ---------------------------------------------------------------- confirmations

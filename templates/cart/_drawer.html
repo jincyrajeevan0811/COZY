@@ -1,0 +1,40 @@
+{% if summary.items %}
+<div class="flex-grow-1 overflow-auto">
+  {% if site.free_shipping_threshold %}
+  <div class="px-4 pt-3 pb-2 small">
+    {% if summary.remaining_for_free_shipping > 0 %}You're <strong>{{ summary.remaining_for_free_shipping|inr:"auto" }}</strong> away from free shipping{% else %}<i class="bi bi-truck text-rose"></i> You've unlocked <strong>free shipping</strong>{% endif %}
+    <div class="free-ship-bar mb-0"><span style="width:{% if summary.remaining_for_free_shipping > 0 %}{{ summary.subtotal|percent_of:site.free_shipping_threshold }}{% else %}100{% endif %}%"></span></div>
+  </div>
+  {% endif %}
+  {% for item in summary.items %}
+  <div class="mini-line">
+    <a href="{{ item.product.get_absolute_url }}">{% with img=item.product.primary_image %}{% if img %}<img src="{{ img.image.url }}" alt="{{ item.product.name }}">{% else %}<img alt="">{% endif %}{% endwith %}</a>
+    <div>
+      <a href="{{ item.product.get_absolute_url }}" class="text-reset small fw-medium d-block">{{ item.product.name }}</a>
+      {% if item.variant %}<div class="small text-muted">{{ item.variant.name }}</div>{% endif %}
+      <div class="small text-muted">Qty {{ item.quantity }} × {{ item.unit_price|inr:"auto" }}</div>
+    </div>
+    <div class="text-end">
+      <div class="small fw-semibold">{{ item.line_total|inr:"auto" }}</div>
+      <form method="post" action="{% url 'cart:remove' item.id %}">{% csrf_token %}<button class="btn btn-link p-0 small text-muted" style="font-size:.72rem;letter-spacing:0;text-transform:none">Remove</button></form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<div class="mini-foot">
+  <div class="d-flex justify-content-between mb-1"><span>Subtotal</span><strong>{{ summary.subtotal|inr }}</strong></div>
+  {% if summary.total_savings > 0 %}<div class="small text-success mb-2">You save {{ summary.total_savings|inr }}</div>{% endif %}
+  <p class="small text-muted mb-3">Shipping and coupons are applied at checkout.</p>
+  <div class="d-grid gap-2">
+    <a href="{% url 'orders:checkout' %}" class="btn btn-cozy">Checkout <i class="bi bi-lock ms-1"></i></a>
+    <a href="{% url 'cart:detail' %}" class="btn btn-light-cozy">View bag</a>
+  </div>
+</div>
+{% else %}
+<div class="p-5 text-center my-auto">
+  <i class="bi bi-bag-heart display-5 text-rose"></i>
+  <h3 class="h4 mt-3">Your bag is empty</h3>
+  <p class="text-muted small">Find something you'll love.</p>
+  <a href="{% url 'products:collection' 'new-arrivals' %}" class="btn btn-cozy">Shop new arrivals</a>
+</div>
+{% endif %}

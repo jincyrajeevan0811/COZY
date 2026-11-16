@@ -1,12 +1,15 @@
 """
-Load COZY demo data: categories, attributes, products (with generated images),
-banners, CMS pages, FAQs, testimonials, shipping methods and coupons.
+Load COZY demo data: categories, attributes, products, banners, CMS pages,
+FAQs, testimonials, shipping methods and coupons.
 
-    python manage.py seed_cozy            # add demo data (idempotent)
-    python manage.py seed_cozy --no-images  # skip image generation
+    python manage.py seed_cozy                    # add demo data with real photos (idempotent)
+    python manage.py seed_cozy --replace-images   # swap images on existing demo data for real photos
+    python manage.py seed_cozy --generated-images # offline: use drawn artwork instead of photos
+    python manage.py seed_cozy --no-images        # no images at all
 
-Images are generated with Pillow so the store looks complete without any
-third-party photos. Replace them with real product photography from the dashboard.
+Real photos are free-licence Unsplash images downloaded on your machine (see _photos.py).
+If a photo can't be downloaded, drawn artwork is used instead. Replace demo photos with
+your own product photography from the dashboard before going live.
 """
 import io
 import math
@@ -30,6 +33,8 @@ from apps.website_settings.models import (
     FAQ, Banner, BlogPost, HomeSection, InstagramPost, StaticPage, Testimonial, WebsiteSetting,
 )
 from apps.website_settings.views import ensure_home_sections
+
+from ._photos import BLOG, BRAND, HERO, OFFER, PROMO, SOCIAL, PhotoFetcher
 
 PALETTES = [
     ((243, 233, 220), (232, 196, 196)),
@@ -213,20 +218,44 @@ TESTIMONIALS = [
 
 
 class Command(BaseCommand):
-    help = "Load COZY demo catalogue and content (safe to run more than once)."
+    help = "Load COZY demo catalogue and content with real photos (safe to run more than once)."
 
     def add_arguments(self, parser):
-        parser.add_argument("--no-images", action="store_true", help="Do not generate product/banner images")
+        parser.add_argument("--no-images", action="store_true", help="Do not add any images")
+        parser.add_argument("--generated-images", action="store_true", help="Use drawn artwork instead of photos")
+        parser.add_argument("--replace-images", action="store_true",
+                            help="Replace images on existing demo categories, products, banners and posts")
         parser.add_argument("--products", type=int, default=36, help="Approximate number of demo products")
 
-    @transaction.atomic
+    # ------------------------------------------------------------------ helpers
+    def _image(self, photo_id, width, height, fallback):
+        """Real photo when possible, otherwise generated artwork."""
+        photo = self.photos.get(photo_id, width, height)
+        return photo if photo is not None else fallback()
+
+    def _set(self, obj, field, filename, photo_id, width, height, fallback):
+        file_field = getattr(obj, field)
+        if file_field and not self.replace:
+            return False
+        if file_field:
+            file_field.delete(save=False)
+        file_field.save(filename, self._image(photo_id, width, height, fallback), save=False)
+        return True
+
     def handle(self, *args, **opts):
-        images = not opts["no_images"]
+        self.images = not opts["no_images"]
+        self.replace = opts["replace_images"]
+        self.photos = PhotoFetcher(enabled=self.images and not opts["generated_images"], stdout=self.stdout)
+        if self.photos.enabled:
+            self.stdout.write("Downloading demo photos from Unsplash (free licence)… this can take a minute.")
         sync_roles_and_permissions()
         site = WebsiteSetting.load()
         site = WebsiteSetting.objects.get(pk=site.pk)
         site.contact_phone = site.contact_phone or "+91 90000 00000"
         site.address = site.address or "COZY Studio, Kerala, India"
+        if self.images:
+            self._set(site, "brand_image", "brand-story.jpg", BRAND, 1200, 1400,
+                      lambda: banner_image(50, size=(1200, 1400)))
         site.save()
 
         attrs = {"color": [], "material": [], "style": [], "size": []}
@@ -246,11 +275,14 @@ class Command(BaseCommand):
 
         categories = {}
         for order, (name, desc, subs) in enumerate(CATEGORIES):
-            cat, created = Category.objects.get_or_create(name=name, defaults={"description": desc, "display_order": order})
-            if images and not cat.image:
-                cat.image.save(f"{cat.slug}.jpg", jewellery_image(name, order * 7, size=(700, 700)), save=False)
-                cat.banner_image.save(f"{cat.slug}-banner.jpg", banner_image(order + 20), save=False)
-                cat.save()
+            cat, _ = Category.objects.get_or_create(name=name, defaults={"description": desc, "display_order": order})
+            if self.images:
+                changed = self._set(cat, "image", f"{cat.slug}.jpg", self.photos.pick(name, 0), 800, 1000,
+                                    lambda n=name, o=order: jewellery_image(n, o * 7, size=(800, 1000)))
+                changed |= self._set(cat, "banner_image", f"{cat.slug}-banner.jpg", self.photos.pick(name, 1), 1920, 640,
+                                     lambda o=order: banner_image(o + 20, size=(1920, 640)))
+                if changed:
+                    cat.save()
             categories[name] = cat
             for j, sub in enumerate(subs):
                 SubCategory.objects.get_or_create(category=cat, name=sub, defaults={"display_order": j})
@@ -291,12 +323,8 @@ class Command(BaseCommand):
                 tags=f"{noun.lower()}, {cat_name.lower()}, fashion jewellery, imitation jewellery",
                 sold_count=rng.randint(0, 120), view_count=rng.randint(10, 900),
             )
-            if images:
-                for k in range(2):
-                    ProductImage.objects.create(
-                        product=product, is_primary=k == 0, display_order=k,
-                        image=ContentFile(jewellery_image(cat_name, i * 3 + k).read(), name=f"{product.slug}-{k + 1}.jpg"),
-                    )
+            if self.images:
+                self._product_images(product, cat_name, i)
             if has_variants:
                 for j, size in enumerate(["6", "7", "8"]):
                     variant = ProductVariant.objects.create(
@@ -310,7 +338,11 @@ class Command(BaseCommand):
                 if qty:
                     adjust_stock(get_inventory(product), qty, StockHistory.STOCK_IN, note="Demo opening stock")
             created_count += 1
-        self.stdout.write(f"✓ {created_count} products")
+        if self.images and self.replace:
+            for idx, product in enumerate(Product.objects.filter(sku__startswith="CZ-").select_related("category")):
+                product.images.all().delete()
+                self._product_images(product, product.category.name, idx + 1)
+        self.stdout.write(f"✓ {created_count} new products")
 
         ShippingMethod.objects.get_or_create(code="standard", defaults={
             "name": "Standard delivery", "description": "Tracked delivery across India", "charge": Decimal("59"),
@@ -335,41 +367,8 @@ class Command(BaseCommand):
             "valid_to": now + timedelta(days=60), "per_user_limit": 2})
         self.stdout.write("✓ coupons")
 
-        if images:
-            hero = [
-                ("New Season Edit", "Korean minimal & western statement pieces, freshly landed.", "NEW ARRIVALS",
-                 "/shop/collections/new-arrivals/"),
-                ("Sparkle for Every Celebration", "Festive jewellery sets crafted to shine.", "FESTIVE EDIT",
-                 "/shop/category/jewellery-sets/"),
-                ("Everyday Elegance", "Lightweight earrings you'll never want to take off.", "BESTSELLERS",
-                 "/shop/collections/best-sellers/"),
-            ]
-            for idx, (title, sub, eyebrow, link) in enumerate(hero):
-                if not Banner.objects.filter(title=title).exists():
-                    b = Banner(title=title, subtitle=sub, eyebrow=eyebrow, link=link, position=Banner.HERO, display_order=idx,
-                               text_align="left")
-                    b.image.save(f"hero-{idx + 1}.jpg", banner_image(idx), save=False)
-                    b.save()
-            promos = [("The Gift Shop", "Ready-to-gift boxes for every occasion", "/shop/category/gift-items/"),
-                      ("Under ₹499", "Everyday favourites at little prices", "/shop/?max_price=499")]
-            for idx, (title, sub, link) in enumerate(promos):
-                if not Banner.objects.filter(title=title).exists():
-                    b = Banner(title=title, subtitle=sub, link=link, position=Banner.PROMO, display_order=idx)
-                    b.image.save(f"promo-{idx + 1}.jpg", banner_image(idx + 10, size=(1200, 750)), save=False)
-                    b.save()
-            if not Banner.objects.filter(position=Banner.OFFER).exists():
-                b = Banner(title="Festive Sale — up to 50% off", subtitle="Use code FESTIVE20 for an extra 20% off on orders above ₹1,499.",
-                           eyebrow="LIMITED TIME", link="/shop/collections/offers/", button_text="Shop the sale",
-                           position=Banner.OFFER)
-                b.image.save("offer.jpg", banner_image(30, size=(1600, 600)), save=False)
-                b.save()
-            for k in range(6):
-                if InstagramPost.objects.count() >= 6:
-                    break
-                post = InstagramPost(caption=f"Styled by our community #{k + 1}", display_order=k)
-                post.image.save(f"insta-{k + 1}.jpg", jewellery_image(cat_names[k % len(cat_names)], 100 + k, size=(600, 600)),
-                                save=False)
-                post.save()
+        if self.images:
+            self._banners()
         self.stdout.write("✓ banners & social gallery")
 
         for order, (title, (column, content)) in enumerate(PAGES.items()):
@@ -379,13 +378,62 @@ class Command(BaseCommand):
             FAQ.objects.get_or_create(question=q, defaults={"answer": a, "category": cat, "display_order": order})
         for order, (name, city, text) in enumerate(TESTIMONIALS):
             Testimonial.objects.get_or_create(name=name, defaults={"location": city, "text": text, "display_order": order})
-        if not BlogPost.objects.exists():
+        post = BlogPost.objects.filter(slug="5-ways-to-layer-necklaces-like-a-stylist").first()
+        if post is None and not BlogPost.objects.exists():
             post = BlogPost(title="5 Ways to Layer Necklaces Like a Stylist",
                             excerpt="Mix lengths, textures and pendants for an effortless stacked look.",
                             content="<p>Layering is the easiest way to make simple outfits feel styled.</p><h2>1. Start with three lengths</h2><p>Choose a choker, a 16-inch chain and an 18-inch pendant.</p><h2>2. Mix textures</h2><p>Pair a smooth snake chain with pearls or a paperclip chain.</p><h2>3. Keep one hero piece</h2><p>Let one pendant stand out — keep the rest delicate.</p>",
                             tags="styling, necklaces", is_published=True)
-            if images:
-                post.cover_image.save("blog-layering.jpg", banner_image(40, size=(1400, 875)), save=False)
+        if post is not None:
+            if self.images:
+                self._set(post, "cover_image", "blog-layering.jpg", BLOG, 1400, 875,
+                          lambda: banner_image(40, size=(1400, 875)))
             post.save()
         ensure_home_sections()
+        if self.photos.ok:
+            self.stdout.write(f"✓ {self.photos.ok} real photos downloaded")
         self.stdout.write(self.style.SUCCESS("COZY demo data loaded. Create an admin with: python manage.py createsuperuser"))
+
+    def _product_images(self, product, cat_name, index):
+        for k in range(2):
+            photo_id = self.photos.pick(cat_name, index + k * 3)
+            content = self._image(photo_id, 900, 1125, lambda k=k: jewellery_image(cat_name, index * 3 + k))
+            ProductImage.objects.create(product=product, is_primary=k == 0, display_order=k,
+                                        image=ContentFile(content.read(), name=f"{product.slug}-{k + 1}.jpg"))
+
+    def _banners(self):
+        hero = [
+            ("New Season Edit", "Korean minimal & western statement pieces, freshly landed.", "NEW ARRIVALS",
+             "/shop/collections/new-arrivals/", "left"),
+            ("Sparkle for Every Celebration", "Festive jewellery sets crafted to shine.", "FESTIVE EDIT",
+             "/shop/category/jewellery-sets/", "left"),
+            ("Everyday Elegance", "Lightweight pieces you'll never want to take off.", "BESTSELLERS",
+             "/shop/collections/best-sellers/", "left"),
+        ]
+        for idx, (title, sub, eyebrow, link, align) in enumerate(hero):
+            b = Banner.objects.filter(title=title).first() or Banner(
+                title=title, subtitle=sub, eyebrow=eyebrow, link=link, position=Banner.HERO, display_order=idx,
+                text_align=align)
+            if self._set(b, "image", f"hero-{idx + 1}.jpg", HERO[idx], 1920, 900,
+                         lambda i=idx: banner_image(i, size=(1920, 900))) or not b.pk:
+                b.save()
+        promos = [("The Gift Shop", "Ready-to-gift boxes for every occasion", "/shop/category/gift-items/", "GIFTING"),
+                  ("Under ₹499", "Everyday favourites at little prices", "/shop/?max_price=499", "STEAL DEALS")]
+        for idx, (title, sub, link, eyebrow) in enumerate(promos):
+            b = Banner.objects.filter(title=title).first() or Banner(
+                title=title, subtitle=sub, link=link, eyebrow=eyebrow, position=Banner.PROMO, display_order=idx)
+            if self._set(b, "image", f"promo-{idx + 1}.jpg", PROMO[idx], 1200, 1300,
+                         lambda i=idx: banner_image(i + 10, size=(1200, 1300))) or not b.pk:
+                b.save()
+        b = Banner.objects.filter(position=Banner.OFFER).first() or Banner(
+            title="Festive Sale — up to 50% off",
+            subtitle="Use code FESTIVE20 for an extra 20% off on orders above ₹1,499.",
+            eyebrow="LIMITED TIME", link="/shop/collections/offers/", button_text="Shop the sale", position=Banner.OFFER)
+        if self._set(b, "image", "offer.jpg", OFFER, 1800, 700, lambda: banner_image(30, size=(1800, 700))) or not b.pk:
+            b.save()
+        for k in range(6):
+            post = InstagramPost.objects.filter(display_order=k).first() or InstagramPost(
+                caption=f"Styled by our community #{k + 1}", display_order=k)
+            if self._set(post, "image", f"insta-{k + 1}.jpg", SOCIAL[k], 700, 700,
+                         lambda k=k: jewellery_image("Necklaces", 100 + k, size=(700, 700))) or not post.pk:
+                post.save()

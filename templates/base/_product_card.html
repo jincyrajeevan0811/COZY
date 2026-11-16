@@ -18,18 +18,18 @@
   </div>
   <button type="button" class="pc-wish js-wishlist {% if product.id in wishlist_ids %}active{% endif %}" data-url="{% url 'wishlist:toggle' product.id %}" aria-label="Add {{ product.name }} to wishlist"><i class="bi bi-heart"></i></button>
   <div class="pc-actions">
-    <button type="button" class="btn" data-quick-view="{% url 'products:quick_view' product.slug %}"><i class="bi bi-eye me-1"></i>Quick view</button>
+    <button type="button" class="btn" data-quick-view="{% url 'products:quick_view' product.slug %}">Quick view</button>
     {% if product.in_stock and not product.has_variants %}
     <form class="js-add-to-cart d-flex flex-fill" method="post" action="{% url 'cart:add' %}">
       {% csrf_token %}<input type="hidden" name="product_id" value="{{ product.id }}"><input type="hidden" name="quantity" value="1">
-      <button type="submit" class="btn w-100"><i class="bi bi-bag-plus me-1"></i>Add</button>
+      <button type="submit" class="btn w-100">Add to bag</button>
     </form>
     {% elif product.in_stock %}
-    <a href="{{ product.get_absolute_url }}" class="btn"><i class="bi bi-sliders me-1"></i>Options</a>
+    <a href="{{ product.get_absolute_url }}" class="btn">Choose options</a>
     {% endif %}
   </div>
   <div class="pc-body">
-    <span class="pc-cat">{{ product.category.name }}</span>
+    <div class="pc-meta"><span class="pc-cat">{{ product.category.name }}</span>{% if product.color and product.color.color_code %}<span class="small text-muted"><span class="pc-swatch" style="background:{{ product.color.color_code }}"></span>{{ product.color.value }}</span>{% endif %}</div>
     <h3 class="pc-title"><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
     {% if product.review_count %}<div>{{ product.avg_rating|stars }} <small class="text-muted">({{ product.review_count }})</small></div>{% endif %}
     <div class="price-row">

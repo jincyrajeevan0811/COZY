@@ -33,7 +33,11 @@
   <a class="visually-hidden-focusable" href="#main">Skip to content</a>
 
   {% if site.announcement_active and site.announcement_text %}
-  <div class="announcement-bar">{{ site.announcement_text }}</div>
+  <div class="announcement-bar" role="region" aria-label="Announcements">
+    <div class="marquee">
+      {% for i in "123" %}<span>{{ site.announcement_text }}</span><span>Secure checkout · UPI · Cards{% if site.cod_enabled %} · COD{% endif %}</span><span>Gift-ready packaging on every order</span>{% endfor %}
+    </div>
+  </div>
   {% endif %}
 
   <header class="site-header">
@@ -67,7 +71,7 @@
           <a href="{% url 'accounts:login' %}" class="icon-btn" aria-label="Sign in"><i class="bi bi-person"></i></a>
           {% endif %}
           <a href="{% url 'wishlist:detail' %}" class="icon-btn" aria-label="Wishlist"><i class="bi bi-heart"></i><span class="badge-count js-wishlist-count" data-count="{{ wishlist_count }}">{{ wishlist_count }}</span></a>
-          <a href="{% url 'cart:detail' %}" class="icon-btn" aria-label="Shopping bag"><i class="bi bi-bag"></i><span class="badge-count js-cart-count" data-count="{{ cart_count }}">{{ cart_count }}</span></a>
+          <a href="{% url 'cart:detail' %}" class="icon-btn" aria-label="Shopping bag" data-mini-cart="{% url 'cart:drawer' %}"><i class="bi bi-bag"></i><span class="badge-count js-cart-count" data-count="{{ cart_count }}">{{ cart_count }}</span></a>
         </div>
       </div>
       <div class="collapse d-lg-none pb-3" id="mobileSearch">
@@ -149,6 +153,17 @@
 
   <footer class="site-footer">
     <div class="container">
+      {% if request.resolver_match.url_name != "home" %}
+      <div class="footer-cta row g-4 align-items-center">
+        <div class="col-lg-6"><span class="eyebrow">{{ site.instagram_handle|default:"The COZY circle" }}</span><h3>{{ site.newsletter_title }}</h3><p class="small mb-0">{{ site.newsletter_text }}</p></div>
+        <div class="col-lg-6 d-flex justify-content-lg-end">
+          <form class="js-newsletter w-100" method="post" action="{% url 'site:newsletter_subscribe' %}">{% csrf_token %}
+            <input type="email" name="email" class="form-control" placeholder="Your email address" required aria-label="Email address">
+            <button class="btn btn-rose" type="submit">Join</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
       <div class="row g-5">
         <div class="col-lg-4">
           <div class="brand-logo mb-3">{{ site.site_name|upper }}<span>FASHION JEWELLERY</span></div>
@@ -192,6 +207,23 @@
       </div>
     </div>
   </footer>
+
+  <nav class="bottom-nav" aria-label="Mobile">
+    {% with ns=request.resolver_match.namespace name=request.resolver_match.url_name %}
+    <a href="{% url 'home' %}" class="{% if name == 'home' %}active{% endif %}"><i class="bi bi-house"></i>Home</a>
+    <a href="{% url 'products:list' %}" class="{% if ns == 'products' %}active{% endif %}"><i class="bi bi-grid"></i>Shop</a>
+    <a href="{% url 'wishlist:detail' %}" class="{% if ns == 'wishlist' %}active{% endif %}"><i class="bi bi-heart"></i>Wishlist<span class="badge-count js-wishlist-count" data-count="{{ wishlist_count }}">{{ wishlist_count }}</span></a>
+    <a href="{% url 'cart:detail' %}" class="{% if ns == 'cart' %}active{% endif %}"><i class="bi bi-bag"></i>Bag<span class="badge-count js-cart-count" data-count="{{ cart_count }}">{{ cart_count }}</span></a>
+    <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="{% if ns == 'accounts' %}active{% endif %}"><i class="bi bi-person"></i>Account</a>
+    {% endwith %}
+  </nav>
+
+  <div class="offcanvas offcanvas-end mini-cart" tabindex="-1" id="miniCart" aria-labelledby="miniCartLabel">
+    <div class="offcanvas-header"><h2 class="offcanvas-title" id="miniCartLabel">Your bag</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+    <div class="offcanvas-body"><div class="p-5 text-center"><span class="spinner-border text-secondary"></span></div></div>
+  </div>
+
+  <button type="button" class="to-top" aria-label="Back to top"><i class="bi bi-arrow-up"></i></button>
 
   {% if site.whatsapp_link %}<a href="{{ site.whatsapp_link }}" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
 

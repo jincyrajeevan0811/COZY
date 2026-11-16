@@ -104,7 +104,7 @@ cp .env.example .env
 python manage.py makemigrations accounts categories products inventory cart wishlist coupons shipping \
   orders payments reviews notifications support website_settings dashboard
 python manage.py migrate            # also creates the default roles & permissions
-python manage.py seed_cozy          # demo categories, ~36 products with images, banners, pages, coupons…
+python manage.py seed_cozy          # demo categories, ~36 products with real photos, banners, pages, coupons…
 python manage.py createsuperuser    # your Super Admin (email + password)
 python manage.py runserver
 ```
@@ -112,6 +112,12 @@ python manage.py runserver
 - Storefront: http://127.0.0.1:8000/
 - COZY dashboard: http://127.0.0.1:8000/cozy-admin/
 - Django admin (internal): http://127.0.0.1:8000/secure-django-admin/
+
+**Demo photos.** `seed_cozy` downloads free-licence jewellery photos from Unsplash
+(https://unsplash.com/license) on your machine, needing internet. If you already seeded
+with the old drawn images, run `python manage.py seed_cozy --replace-images`. To work offline, use
+`--generated-images`. These are demo photos only and don't show your own products, so replace
+them with your product photography from the dashboard before launch.
 
 During development, emails (verification, order confirmation, password reset) are printed in the terminal.
 
