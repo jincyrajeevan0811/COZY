@@ -348,7 +348,11 @@
   }
   const buyBar = $(".mobile-buy-bar"), buyForm = $(".pd-info .js-add-to-cart");
   if (buyBar && buyForm && "IntersectionObserver" in window) {
-    new IntersectionObserver(([en]) => buyBar.classList.toggle("show", !en.isIntersecting && en.boundingClientRect.top < 0)).observe(buyForm);
+    new IntersectionObserver(([en]) => {
+      const show = !en.isIntersecting && en.boundingClientRect.top < 0;
+      buyBar.classList.toggle("show", show);
+      document.body.classList.toggle("buybar-visible", show);
+    }).observe(buyForm);
     $("[data-buy-bar-submit]", buyBar).addEventListener("click", () => {
       const btn = $("button[type=submit]:not([name])", buyForm);
       if (btn) btn.click(); else buyForm.requestSubmit();

@@ -74,7 +74,7 @@
       <a class="btn-link-cozy" href="{% url 'products:list' %}">All jewellery <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="cat-mosaic">
-      {% for cat in items|slice:":7" %}
+      {% for cat in items|slice:":5" %}
       <a class="cat-tile reveal" href="{{ cat.get_absolute_url }}">
         {% if cat.image %}<img src="{{ cat.image.url }}" alt="{{ cat.name }}" loading="lazy">{% endif %}
         <div class="cat-label">
@@ -186,7 +186,7 @@
 <section class="section">
   <div class="container">
     <div class="brand-intro reveal">
-      <div class="row g-5 align-items-center">
+      <div class="row g-4 g-lg-5 align-items-center">
         <div class="col-lg-6 order-lg-2"><div class="brand-img">{% if site.brand_image %}<img src="{{ site.brand_image.url }}" alt="{{ site.site_name }}" loading="lazy">{% endif %}</div></div>
         <div class="col-lg-6">
           <div class="brand-copy ps-lg-0">

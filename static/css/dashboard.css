@@ -138,3 +138,23 @@ body.dash { background: var(--d-bg); color: var(--d-text); font-family: var(--bs
   .dash-main { margin: 0; }
   body.dash { background: #fff; }
 }
+
+/* v3 — responsive fixes */
+.dash h1, .dash h2, .dash h3, .dash h4, .dash h5, .dash h6, .dash .h5 { color: var(--d-text); }
+.dash .d-card-head h5 { font-family: "Jost", sans-serif; }
+.table-responsive > .table-d { min-width: 680px; }
+.table-d td .small, .table-d .text-nowrap { white-space: nowrap; }
+@media (max-width: 767.98px) {
+  .page-title h1 { font-size: 1.6rem; }
+  .page-title { margin-bottom: 1rem; }
+  .filter-bar { width: 100%; }
+  .filter-bar > .form-control, .filter-bar > .form-select { flex: 1 1 calc(50% - .6rem); min-width: 0; width: auto; }
+  .filter-bar > .search-input { flex-basis: 100%; }
+  .kpi { padding: 1rem; }
+  .kpi .value { font-size: 1.3rem; }
+  .d-card .d-card-head, .d-card .d-card-body { padding: 1rem; }
+  .status-tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .3rem; }
+  .status-tabs a { white-space: nowrap; }
+  .chart-wrap { height: 240px; }
+  .dash-topbar { padding: .6rem 1rem; }
+}

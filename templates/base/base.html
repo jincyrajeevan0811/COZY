@@ -55,7 +55,7 @@
         <div class="header-icons ms-auto ms-lg-0">
           <button class="icon-btn d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSearch" aria-label="Search"><i class="bi bi-search"></i></button>
           {% if user.is_authenticated %}
-          <div class="dropdown">
+          <div class="dropdown hide-mobile">
             <button class="icon-btn" data-bs-toggle="dropdown" aria-label="Account"><i class="bi bi-person"></i></button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2">
               <li class="px-3 py-2 small text-muted">Hi, {{ user.get_short_name }}</li>
@@ -68,9 +68,9 @@
             </ul>
           </div>
           {% else %}
-          <a href="{% url 'accounts:login' %}" class="icon-btn" aria-label="Sign in"><i class="bi bi-person"></i></a>
+          <a href="{% url 'accounts:login' %}" class="icon-btn hide-mobile" aria-label="Sign in"><i class="bi bi-person"></i></a>
           {% endif %}
-          <a href="{% url 'wishlist:detail' %}" class="icon-btn" aria-label="Wishlist"><i class="bi bi-heart"></i><span class="badge-count js-wishlist-count" data-count="{{ wishlist_count }}">{{ wishlist_count }}</span></a>
+          <a href="{% url 'wishlist:detail' %}" class="icon-btn hide-mobile" aria-label="Wishlist"><i class="bi bi-heart"></i><span class="badge-count js-wishlist-count" data-count="{{ wishlist_count }}">{{ wishlist_count }}</span></a>
           <a href="{% url 'cart:detail' %}" class="icon-btn" aria-label="Shopping bag" data-mini-cart="{% url 'cart:drawer' %}"><i class="bi bi-bag"></i><span class="badge-count js-cart-count" data-count="{{ cart_count }}">{{ cart_count }}</span></a>
         </div>
       </div>
@@ -86,7 +86,7 @@
       <div class="container">
         <ul class="nav">
           <li class="nav-item"><a class="nav-link" href="{% url 'products:collection' 'new-arrivals' %}">New In</a></li>
-          {% for cat in menu_categories|slice:":7" %}
+          {% for cat in menu_categories|slice:":6" %}
           <li class="nav-item has-mega">
             <a class="nav-link {% if category.pk == cat.pk %}active{% endif %}" href="{{ cat.get_absolute_url }}">{{ cat.name }}</a>
             {% if cat.active_subs %}
@@ -164,7 +164,7 @@
         </div>
       </div>
       {% endif %}
-      <div class="row g-5">
+      <div class="row g-4 g-lg-5">
         <div class="col-lg-4">
           <div class="brand-logo mb-3">{{ site.site_name|upper }}<span>FASHION JEWELLERY</span></div>
           <p class="small">{{ site.footer_about }}</p>

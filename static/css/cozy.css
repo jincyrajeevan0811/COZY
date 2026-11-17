@@ -677,3 +677,167 @@ body { font-size: 15.5px; }
 .to-top.show { opacity: 1; pointer-events: auto; }
 @media (min-width: 992px) { .to-top { bottom: 90px; } }
 .hero picture { display: block; height: 100%; }
+
+/* ==========================================================================
+   v3 — responsive & UX fixes (found by rendering every page at 375/768/1280)
+   ========================================================================== */
+body { overflow-x: clip; }
+h5, h6, .h5, .h6 { font-family: var(--cz-sans); font-weight: 600; color: var(--cz-charcoal); }
+.h1, .h2, .h3, .h4 { font-family: var(--cz-serif); font-weight: 600; color: var(--cz-charcoal); }
+a.text-reset:hover { color: var(--cz-rose) !important; }
+.btn-link { text-transform: none; letter-spacing: 0; font-size: .85rem; }
+img { height: auto; }
+
+/* Header: never wider than the screen */
+.header-main > * { min-width: 0; }
+.brand-logo { white-space: nowrap; flex-shrink: 0; }
+.brand-logo span { white-space: nowrap; }
+.main-nav .nav { flex-wrap: nowrap; }
+.main-nav .nav-link { white-space: nowrap; }
+@media (min-width: 992px) and (max-width: 1279.98px) {
+  .main-nav .nav { gap: 0; }
+  .main-nav .nav-link { padding: .9rem .62rem; letter-spacing: .14em; font-size: .7rem; }
+  .main-nav .nav-link::after { left: .62rem; right: .62rem; }
+}
+@media (max-width: 991.98px) {
+  :root { --cz-header-h: 64px; }
+  .header-main { padding: .55rem 0; gap: .25rem; }
+  .brand-logo { font-size: 1.55rem; letter-spacing: .26em; margin-right: auto; }
+  .brand-logo span { font-size: .42rem; letter-spacing: .38em; }
+  .header-icons { gap: 0; }
+  .header-icons .hide-mobile { display: none !important; }
+  .icon-btn { width: 40px; height: 40px; font-size: 1.15rem; }
+}
+@media (max-width: 359.98px) { .brand-logo { font-size: 1.3rem; letter-spacing: .18em; } .brand-logo span { display: none; } }
+
+/* Sections spacing on small screens */
+@media (max-width: 767.98px) {
+  .section { padding: 2.75rem 0; }
+  .section-sm { padding: 1.75rem 0; }
+  .section-head { margin-bottom: 1.6rem; }
+  .section-head-row { margin-bottom: 1.3rem; align-items: flex-end; }
+  .section-head-row h2 { font-size: 1.9rem; }
+  .section-head-row .text-muted { font-size: .88rem; }
+  .btn { padding: .75rem 1.4rem; }
+  .btn-lg { padding: .85rem 1.6rem; font-size: .74rem; }
+}
+
+/* Hero: readable on phones (bottom-aligned copy over a vertical scrim) */
+@media (max-width: 767.98px) {
+  .hero .carousel-item { height: min(78vh, 640px); min-height: 460px; }
+  .hero .hero-overlay, .hero .hero-overlay.align-center, .hero .hero-overlay.align-right {
+    background: linear-gradient(180deg, rgba(31,27,25,.05) 25%, rgba(31,27,25,.78) 100%);
+  }
+  .hero .hero-content { align-items: flex-end; padding-bottom: 3.6rem; }
+  .hero .hero-content .inner, .hero .hero-content.align-right .inner { text-align: left; margin: 0; }
+  .hero .hero-content .d-flex { justify-content: flex-start !important; }
+  .hero h1 { font-size: clamp(2.2rem, 10vw, 3rem); }
+  .hero p { font-size: .98rem; margin-bottom: 1.3rem; }
+  .hero .eyebrow { letter-spacing: .28em; font-size: .64rem; }
+  .hero .carousel-indicators { justify-content: center; margin-bottom: 1.2rem; }
+  .hero .carousel-control-prev, .hero .carousel-control-next { display: none; }
+  .value-strip { padding: .8rem 0; }
+  .value-strip .marquee span { font-size: 1.1rem; }
+  .usp-strip .usp-item { justify-content: flex-start; padding: 1rem 0; gap: .6rem; }
+  .usp-item i { font-size: 1.3rem; }
+  .usp-item strong { font-size: .82rem; }
+  .usp-item small { font-size: .74rem; }
+}
+
+/* Category mosaic: 1 large + 4 small fills the grid exactly at every width */
+.cat-mosaic .cat-tile:nth-child(n+6) { display: none; }
+@media (max-width: 575.98px) {
+  .cat-tile .arrow, .cat-tile small { display: none; }
+  .cat-tile .cat-label { left: .9rem; right: .9rem; bottom: .8rem; }
+  .cat-tile h3 { font-size: 1.15rem; line-height: 1.15; }
+  .cat-tile:first-child h3 { font-size: 1.8rem; }
+}
+
+/* Product cards */
+.pc-meta { min-width: 0; }
+.pc-meta .pc-cat { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-meta > span:last-child { white-space: nowrap; flex-shrink: 0; }
+@media (max-width: 575.98px) {
+  .pc-body { padding-top: .65rem; }
+  .pc-title { font-size: .86rem; }
+  .pc-cat { font-size: .6rem; letter-spacing: .14em; }
+  .pc-color-name { display: none; }
+  .pc-badges { top: .5rem; left: .5rem; gap: .25rem; }
+  .pc-badge { font-size: .55rem; padding: .22rem .5rem; letter-spacing: .08em; }
+  .pc-wish { width: 32px; height: 32px; top: .5rem; right: .5rem; font-size: .9rem; }
+  .price { font-size: .92rem; }
+  .mrp, .off { font-size: .74rem; }
+}
+@media (hover: none) {
+  .pc-actions { padding: .6rem 0 0; left: auto; right: auto; bottom: auto; }
+  .pc-actions .btn[data-quick-view] { display: none; }
+  .pc-actions .btn { background: var(--cz-cream); box-shadow: none; border: 1px solid var(--cz-border); }
+}
+
+/* Promo tiles: portrait on phones, landscape on larger screens */
+@media (min-width: 768px) { .promo-tile { aspect-ratio: 4/3; } }
+
+/* Offer strip & look & brand on phones */
+@media (max-width: 767.98px) {
+  .offer-strip { min-height: 0; border-radius: 18px; }
+  .offer-strip .offer-content { padding: 2rem 1.4rem; }
+  .offer-strip h2 { font-size: 2.1rem; }
+  .countdown { gap: .45rem; }
+  .countdown div { min-width: 0; flex: 1; padding: .5rem .3rem; }
+  .countdown strong { font-size: 1.25rem; }
+  .look-img { aspect-ratio: 1; }
+  .brand-intro .brand-img { min-height: 340px; }
+  .newsletter { border-radius: 20px; padding: 2.2rem 1.3rem; }
+}
+.brand-stats { flex-wrap: wrap; gap: 1.2rem 2.2rem; }
+.brand-stats strong { white-space: nowrap; }
+@media (max-width: 575.98px) { .brand-stats { gap: 1rem 1.4rem; } .brand-stats strong { font-size: 1.45rem; } }
+
+/* Page hero with a background image: keep text readable */
+.page-hero.with-image p, .page-hero.with-image .text-muted { color: rgba(255,255,255,.88) !important; }
+.page-hero.with-image::after { background: linear-gradient(180deg, rgba(31,27,25,.35), rgba(31,27,25,.55)); }
+@media (max-width: 767.98px) { .page-hero { padding: 2.4rem 0 2rem; } .page-hero.with-image { padding: 3.6rem 0 3rem; } }
+
+/* Product detail */
+.pd-actions { display: flex; gap: .5rem; align-items: center; flex-wrap: nowrap; }
+.pd-actions .btn-cozy { flex: 1 1 auto; min-width: 0; }
+.btn-square { width: 52px; height: 52px; padding: 0 !important; flex: 0 0 52px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem; }
+.pd-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.pd-tabs::-webkit-scrollbar { display: none; }
+.pd-tabs .nav-link { white-space: nowrap; }
+@media (max-width: 575.98px) {
+  .pd-tabs .nav-link { padding: .8rem .9rem; font-size: .85rem; }
+  .trust-row div { font-size: .68rem; padding: .7rem .3rem; }
+  .qty-input button { width: 34px; }
+  .qty-input input { width: 36px; }
+}
+
+/* Checkout steps: one tidy row everywhere */
+.checkout-steps { flex-wrap: nowrap; }
+.checkout-steps .step { min-width: 0; }
+@media (max-width: 767.98px) {
+  .checkout-steps { gap: .3rem; margin-bottom: 1.4rem; }
+  .checkout-steps .step { font-size: .56rem; letter-spacing: .04em; padding-top: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .checkout-block { padding: 1.2rem; }
+  .option-card { padding: .85rem .9rem; gap: .7rem; }
+}
+
+/* Cart */
+@media (max-width: 575.98px) {
+  .cart-item { gap: .9rem; padding: 1.1rem 0; }
+  .summary-card { padding: 1.3rem; }
+}
+
+/* Floating buttons never overlap each other or the sticky buy bar */
+@media (max-width: 991.98px) {
+  .to-top { bottom: 140px; right: 16px; width: 40px; height: 40px; }
+  .whatsapp-float { right: 16px; width: 48px; height: 48px; font-size: 1.4rem; }
+  body.buybar-visible .whatsapp-float { bottom: 148px; }
+  body.buybar-visible .to-top { bottom: 206px; }
+}
+
+/* Accessibility: visible keyboard focus */
+a:focus-visible, button:focus-visible, .btn:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--cz-rose); outline-offset: 2px; box-shadow: none;
+}
+.hero .carousel-indicators [data-bs-target] { height: 3px; border: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; background-clip: padding-box; box-sizing: content-box; }

@@ -16,7 +16,7 @@
 
   <form id="checkoutForm" method="post" data-summary-url="{% url 'orders:checkout_summary' %}" novalidate>
     {% csrf_token %}
-    <div class="row g-5">
+    <div class="row g-4 g-lg-5">
       <div class="col-lg-8">
         <!-- 1. Customer -->
         <div class="checkout-block">
@@ -95,7 +95,7 @@
           </div>
           {% else %}
           <div class="input-group" style="max-width:420px">
-            <input type="text" name="code" form="couponForm" class="form-control text-uppercase" placeholder="Enter coupon code" aria-label="Coupon code">
+            <input type="text" name="code" form="couponForm" class="form-control text-uppercase" placeholder="Coupon code" aria-label="Coupon code">
             <button type="submit" form="couponForm" class="btn btn-cozy">Apply</button>
           </div>
           {% endif %}

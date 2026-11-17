@@ -39,7 +39,7 @@
 </div>
 
 <div class="container pb-5" data-product-scope>
-  <div class="row g-5">
+  <div class="row g-4 g-lg-5">
     <div class="col-lg-7">
       <div class="pd-gallery">
         <div class="pd-thumbs">
@@ -99,14 +99,14 @@
             </div>
           </div>
           {% endif %}
-          <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+          <div class="pd-actions mb-3">
             <div class="qty-input">
               <button type="button" data-qty="-" aria-label="Decrease quantity">−</button>
               <input type="number" name="quantity" value="1" min="1" max="{% if stock < 10 and not product.has_variants %}{{ stock|default:1 }}{% else %}10{% endif %}" aria-label="Quantity">
               <button type="button" data-qty="+" aria-label="Increase quantity">+</button>
             </div>
             <button type="submit" class="btn btn-cozy flex-grow-1" {% if stock <= 0 and not product.has_variants %}disabled{% endif %}><i class="bi bi-bag-plus me-2"></i>Add to bag</button>
-            <button type="button" class="btn btn-light-cozy js-wishlist {% if in_wishlist %}active{% endif %}" data-url="{% url 'wishlist:toggle' product.id %}" aria-label="Wishlist"><i class="bi {% if in_wishlist %}bi-heart-fill text-rose{% else %}bi-heart{% endif %}"></i></button>
+            <button type="button" class="btn btn-light-cozy btn-square js-wishlist {% if in_wishlist %}active{% endif %}" data-url="{% url 'wishlist:toggle' product.id %}" aria-label="Wishlist"><i class="bi {% if in_wishlist %}bi-heart-fill text-rose{% else %}bi-heart{% endif %}"></i></button>
           </div>
           <button type="submit" name="buy_now" value="1" class="btn btn-rose w-100 mb-4" {% if stock <= 0 and not product.has_variants %}disabled{% endif %}>Buy it now</button>
         </form>
@@ -129,7 +129,7 @@
 
         <ul class="info-list">
           <li><i class="bi bi-truck"></i><span>Free shipping on orders above {{ site_settings.free_shipping_threshold|inr:"auto" }}</span></li>
-          <li><i class="bi bi-arrow-repeat"></i><span>{% if product.is_returnable %}{{ product.return_days }}-day easy returns. {{ site_settings.return_policy_summary }}{% else %}This item is not eligible for return.{% endif %}</span></li>
+          <li><i class="bi bi-arrow-repeat"></i><span>{% if product.is_returnable %}{{ product.return_days }}-day easy returns on unused items in original packaging{% else %}This item is not eligible for return.{% endif %}</span></li>
           {% if site_settings.cod_enabled %}<li><i class="bi bi-cash-coin"></i><span>Cash on Delivery available</span></li>{% endif %}
           <li><i class="bi bi-gift"></i><span>Gift wrapping available at checkout</span></li>
         </ul>
@@ -164,7 +164,7 @@
   </div>
 
   <section id="reviews" class="mt-4">
-    <div class="row g-5">
+    <div class="row g-4 g-lg-5">
       <div class="col-lg-4">
         <h2 class="h3">Customer reviews</h2>
         <div class="rating-summary d-flex align-items-center gap-3 my-3">

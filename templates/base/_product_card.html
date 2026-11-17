@@ -29,7 +29,7 @@
     {% endif %}
   </div>
   <div class="pc-body">
-    <div class="pc-meta"><span class="pc-cat">{{ product.category.name }}</span>{% if product.color and product.color.color_code %}<span class="small text-muted"><span class="pc-swatch" style="background:{{ product.color.color_code }}"></span>{{ product.color.value }}</span>{% endif %}</div>
+    <div class="pc-meta"><span class="pc-cat">{{ product.category.name }}</span>{% if product.color and product.color.color_code %}<span class="small text-muted" title="{{ product.color.value }}"><span class="pc-swatch" style="background:{{ product.color.color_code }}"></span><span class="pc-color-name">{{ product.color.value }}</span></span>{% endif %}</div>
     <h3 class="pc-title"><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
     {% if product.review_count %}<div>{{ product.avg_rating|stars }} <small class="text-muted">({{ product.review_count }})</small></div>{% endif %}
     <div class="price-row">
